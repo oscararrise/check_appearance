@@ -83,6 +83,7 @@ class AppearanceApprovalRecordAdmin(admin.ModelAdmin):
     list_filter = ("status", "medical_condition", "test_time_frame_needed", "is_active", "source_file")
     search_fields = ("employee_id", "source_name", "responsible", "situation", "comments")
     readonly_fields = ("created_at", "updated_at")
+    exclude = ("test_final_date", "test_final_date_raw")
 
 
 class ImportIssueInline(admin.TabularInline):
