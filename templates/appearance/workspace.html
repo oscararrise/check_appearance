@@ -2,12 +2,14 @@
 {% load static %}
 {% block title %}{{ process_title }} | ARRISE Appearance{% endblock %}
 {% block body %}
-<div class="workspace-shell" data-process="{{ process }}"
+<div class="workspace-shell"
+     data-process="{{ process }}"
      data-lookup-url="{% url 'appearance:lookup_employee' %}"
      data-preparation-url="{% url 'appearance:record_preparation' %}"
-     data-check-url="{% url 'appearance:record_check' %}">
+     data-check-url="{% url 'appearance:record_check' %}"
+     data-schedule-url="{% url 'appearance:update_schedule' process %}">
 
-    <header class="workspace-header">
+    <header class="workspace-header premium-header">
         <div class="workspace-header-inner">
             <div class="workspace-brand-row">
                 <div class="brand-lockup brand-lockup-light">
@@ -19,7 +21,8 @@
                 </div>
                 <div class="topbar-actions">
                     <span class="user-chip"><span class="user-dot" aria-hidden="true"></span>{{ request.user.username }}</span>
-                    <a class="btn btn-ghost" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+                    <a class="btn btn-ghost btn-compact" href="{% url 'appearance:process_selection' %}">Processes</a>
+                    <a class="btn btn-ghost btn-compact" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
                 </div>
             </div>
 
@@ -51,9 +54,9 @@
         </div>
     </header>
 
-    <main class="workspace-layout">
+    <main class="workspace-layout refined-layout">
         <section class="main-column">
-            <article class="card scanner-card">
+            <article class="card scanner-card glass-card">
                 <div class="scanner-accent" aria-hidden="true"></div>
                 <div class="section-heading scanner-heading">
                     <div class="section-title-group">
@@ -74,7 +77,9 @@
                         <span class="scan-input-icon" aria-hidden="true">#</span>
                         <input id="employee-id-input" class="scan-input" inputmode="numeric" autocomplete="off" placeholder="Employee ID" aria-label="Employee ID">
                     </div>
-                    <button class="btn btn-primary btn-large scan-button" type="submit">Search employee <span aria-hidden="true">→</span></button>
+                    <button class="btn btn-primary btn-large scan-button action-button" type="submit">
+                        <span>Search employee</span><span class="button-arrow" aria-hidden="true">→</span>
+                    </button>
                 </form>
                 <div class="scanner-helper-row">
                     <p class="helper">Use a USB scanner or type the Employee ID manually. Press Enter to continue.</p>
@@ -83,7 +88,7 @@
                 <div id="message" class="alert hidden" role="status"></div>
             </article>
 
-            <article id="employee-card" class="card employee-card hidden">
+            <article id="employee-card" class="card employee-card hidden glass-card">
                 <div class="employee-head">
                     <div class="avatar" id="employee-initials">--</div>
                     <div class="employee-identity">
@@ -95,10 +100,10 @@
                             <span id="employee-role"></span>
                         </div>
                     </div>
-                    <span class="profile-source">HiBob verified</span>
+                    <span class="profile-source"><span class="verified-dot"></span>HiBob verified</span>
                 </div>
 
-                <div class="employee-data-grid">
+                <div class="employee-data-grid employee-data-grid-premium">
                     <section class="employee-data-section data-panel medical-panel">
                         <div class="data-panel-heading">
                             <span class="data-panel-icon medical-icon" aria-hidden="true">+</span>
@@ -128,7 +133,7 @@
                 </div>
 
                 {% if process == "CHECK" %}
-                <section class="check-panel">
+                <section class="check-panel premium-decision-panel">
                     <div class="check-panel-heading">
                         <div>
                             <p class="eyebrow">FINAL DECISION</p>
@@ -146,52 +151,110 @@
                         <span>Operational comment <small>Optional unless context is needed</small></span>
                         <textarea id="check-comment" rows="3" maxlength="500" placeholder="Add a short, clear note for the operations history…"></textarea>
                     </label>
-                    <button id="save-check" type="button" class="btn btn-primary btn-large btn-full" disabled>Save Appearance Check <span aria-hidden="true">→</span></button>
+                    <button id="save-check" type="button" class="btn btn-primary btn-large btn-full action-button" disabled>
+                        <span>Save Appearance Check</span><span class="button-arrow" aria-hidden="true">→</span>
+                    </button>
                 </section>
                 {% endif %}
             </article>
         </section>
 
         <aside class="side-column">
-            <article class="card schedule-card sticky-card">
-                <div class="side-card-heading">
-                    <span class="section-icon small" aria-hidden="true">◷</span>
-                    <div><p class="eyebrow">OFFICIAL WINDOWS</p><h2>Operating schedule</h2></div>
-                </div>
-                <p class="side-card-copy">Use these windows as the official process reference.</p>
-                <div class="schedule-list">
-                    {% if process == "PREPARATION" %}
-                    <div class="schedule-line"><span class="shift-dot morning"></span><div><strong>Morning</strong><small>Preparation window</small></div><time>6:00–8:00</time></div>
-                    <div class="schedule-line"><span class="shift-dot afternoon"></span><div><strong>Afternoon</strong><small>Preparation window</small></div><time>14:00–16:00</time></div>
-                    <div class="schedule-line"><span class="shift-dot night"></span><div><strong>Night</strong><small>Preparation window</small></div><time>22:00–00:00</time></div>
-                    {% else %}
-                    <div class="schedule-line"><span class="shift-dot morning"></span><div><strong>Morning</strong><small>Check window</small></div><time>6:50–7:30</time></div>
-                    <div class="schedule-line"><span class="shift-dot afternoon"></span><div><strong>Afternoon</strong><small>Check window</small></div><time>14:50–15:30</time></div>
-                    <div class="schedule-line"><span class="shift-dot night"></span><div><strong>Night</strong><small>Check window</small></div><time>22:50–23:30</time></div>
+            <article class="card schedule-card sticky-card glass-card">
+                <div class="side-card-heading schedule-heading-row">
+                    <div class="side-heading-copy">
+                        <span class="section-icon small" aria-hidden="true">◷</span>
+                        <div><p class="eyebrow">OFFICIAL WINDOWS</p><h2>Operating schedule</h2></div>
+                    </div>
+                    {% if request.user.is_staff %}
+                    <button id="schedule-edit-button" type="button" class="btn btn-soft btn-small">Edit</button>
                     {% endif %}
                 </div>
+                <p class="side-card-copy">Official windows for this workflow. Changes are stored in the application database.</p>
+
+                <div id="schedule-display" class="schedule-list premium-schedule-list">
+                    {% for row in schedule_rows %}
+                    <div class="schedule-line" data-schedule-shift="{{ row.shift }}">
+                        <span class="shift-dot {{ row.shift|lower }}"></span>
+                        <div><strong>{{ row.get_shift_display }}</strong><small>{{ process_title }} window</small></div>
+                        <time><span class="schedule-start">{{ row.start_time|time:"H:i" }}</span><span class="schedule-separator">–</span><span class="schedule-end">{{ row.end_time|time:"H:i" }}</span></time>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if request.user.is_staff %}
+                <form id="schedule-form" class="schedule-editor hidden">
+                    <div class="schedule-editor-grid">
+                        {% for row in schedule_rows %}
+                        <div class="schedule-editor-row" data-shift="{{ row.shift }}">
+                            <div class="schedule-editor-label"><span class="shift-dot {{ row.shift|lower }}"></span><strong>{{ row.get_shift_display }}</strong></div>
+                            <label><span>Start</span><input class="schedule-start-input" type="time" value="{{ row.start_time|time:'H:i' }}" required></label>
+                            <label><span>End</span><input class="schedule-end-input" type="time" value="{{ row.end_time|time:'H:i' }}" required></label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="schedule-message" class="inline-message hidden" role="status"></div>
+                    <div class="schedule-editor-actions">
+                        <button id="schedule-cancel-button" type="button" class="btn btn-soft">Cancel</button>
+                        <button id="schedule-save-button" type="submit" class="btn btn-primary">Save schedule</button>
+                    </div>
+                </form>
+                {% endif %}
             </article>
         </aside>
     </main>
 
-    <section class="history-shell">
-        <article class="card history-card">
+    <section class="history-shell history-shell-premium">
+        <article class="card history-card glass-card">
             <div class="history-heading">
                 <div class="history-title-wrap">
                     <span class="section-icon" aria-hidden="true">↟</span>
                     <div>
                         <p class="eyebrow">PROCESS HISTORY</p>
                         <h2>Activity history</h2>
-                        <p class="helper">Latest 100 records for this workflow, including decisions and operator comments.</p>
+                        <p class="helper">Filter the workflow history by date, status or Employee ID.</p>
                     </div>
                 </div>
                 <div class="history-actions">
-                    <span class="history-count">{{ history|length }} shown</span>
-                    <a class="btn btn-secondary" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+                    <span class="history-count">{{ history_count }} match{{ history_count|pluralize:"es" }}</span>
+                    <a class="btn btn-secondary btn-compact" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
                 </div>
             </div>
 
-            <div class="history-table-wrap">
+            <form id="history-filter-form" method="get" class="history-filter-form">
+                <label class="filter-field">
+                    <span>From</span>
+                    <input type="date" name="date_from" value="{{ history_filters.date_from_raw }}">
+                </label>
+                <label class="filter-field">
+                    <span>To</span>
+                    <input type="date" name="date_to" value="{{ history_filters.date_to_raw }}">
+                </label>
+                <label class="filter-field filter-id-field">
+                    <span>Employee ID</span>
+                    <input type="search" name="employee_id" value="{{ history_filters.employee_id }}" inputmode="numeric" placeholder="Search ID" autocomplete="off">
+                </label>
+                <label class="filter-field">
+                    <span>Status</span>
+                    <select name="status">
+                        <option value="">All statuses</option>
+                        {% for value, label in status_options %}
+                        <option value="{{ value }}" {% if history_filters.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary filter-apply-button">Apply filters</button>
+                    {% if history_has_filters %}<a class="btn btn-soft" href="{% url 'appearance:workspace' process %}">Clear</a>{% endif %}
+                </div>
+            </form>
+
+            <div class="history-table-meta">
+                <span>Showing {{ history_loaded_count }}{% if history_count > history_loaded_count %} of {{ history_count }}{% endif %} records</span>
+                <span class="scroll-hint">7 rows visible · scroll for more</span>
+            </div>
+
+            <div class="history-table-wrap seven-row-table" id="history-table-wrap">
                 <table class="history-table">
                     <thead>
                         <tr>
@@ -223,11 +286,11 @@
                                 <span class="status-pill status-registered">Registered</span>
                                 {% endif %}
                             </td>
-                            <td class="history-comment">{% if process == "CHECK" %}{{ item.comment|default:"—" }}{% else %}—{% endif %}</td>
+                            <td class="history-comment"><span>{% if process == "CHECK" %}{{ item.comment|default:"—" }}{% else %}—{% endif %}</span></td>
                             <td><span class="recorded-by">{{ item.recorded_by.get_username }}</span></td>
                         </tr>
                         {% empty %}
-                        <tr id="empty-history"><td colspan="7" class="history-empty"><div class="empty-state"><span>○</span><p>No process history yet.</p></div></td></tr>
+                        <tr id="empty-history"><td colspan="7" class="history-empty"><div class="empty-state"><span>○</span><p>No records match these filters.</p></div></td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
