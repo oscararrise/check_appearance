@@ -38,7 +38,78 @@
     };
 
     const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(v => v[0]).join('').toUpperCase();
-    const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+
+    const renderTattoos = (tattoos) => {
+        const summary = document.getElementById('tattoo-summary');
+        const records = document.getElementById('tattoo-records');
+        records.innerHTML = '';
+
+        if (!tattoos?.has_record) {
+            summary.className = 'tattoo-summary unknown';
+            summary.textContent = 'No active tattoo record was found for this Employee ID.';
+            return;
+        }
+
+        if (tattoos.cover_required) {
+            summary.className = 'tattoo-summary cover';
+            summary.textContent = 'Tattoo record found — coverage is required.';
+        } else {
+            summary.className = 'tattoo-summary clear';
+            summary.textContent = 'Tattoo record found — coverage is not required.';
+        }
+
+        tattoos.records.forEach((item) => {
+            const el = document.createElement('div');
+            el.className = 'tattoo-item';
+            const cover = item.should_be_covered === true ? 'Yes' : item.should_be_covered === false ? 'No' : 'Not specified';
+            el.innerHTML = `<strong>Cover required: ${cover}</strong><p>${escapeHtml(item.details || 'Tattoo record')}</p><p>Location: ${escapeHtml(item.location || 'Not specified')}</p>${item.connotation ? `<p>Connotation: ${escapeHtml(item.connotation)}</p>` : ''}`;
+            records.appendChild(el);
+        });
+    };
+
+    const renderApprovals = (approvals) => {
+        const summary = document.getElementById('approval-summary');
+        const records = document.getElementById('approval-records');
+        records.innerHTML = '';
+
+        if (!approvals?.has_record) {
+            summary.className = 'approval-summary unknown';
+            summary.textContent = 'No active appearance approval record was found for this Employee ID.';
+            return;
+        }
+
+        const hasRejected = approvals.records.some(item => item.status === 'REJECTED');
+        const hasInProgress = approvals.records.some(item => item.status === 'IN_PROGRESS');
+
+        if (hasRejected) {
+            summary.className = 'approval-summary rejected';
+            summary.textContent = 'Appearance approval record found — review required.';
+        } else if (hasInProgress) {
+            summary.className = 'approval-summary pending';
+            summary.textContent = 'Appearance approval record found — approval is in progress.';
+        } else {
+            summary.className = 'approval-summary approved';
+            summary.textContent = 'Appearance approval record found.';
+        }
+
+        approvals.records.forEach((item) => {
+            const el = document.createElement('div');
+            el.className = 'approval-item';
+            const details = [
+                item.responsible ? `<p>Responsible: ${escapeHtml(item.responsible)}</p>` : '',
+                `<p>Medical condition: ${escapeHtml(item.medical_condition || 'Not specified')}</p>`,
+                `<p>Test time frame needed: ${escapeHtml(item.test_time_frame_needed || 'Not specified')}</p>`,
+                `<p>Paperwork submitted: ${escapeHtml(item.paperwork_submitted || 'Not specified')}</p>`,
+                item.test_initial_date ? `<p>Initial date: ${escapeHtml(item.test_initial_date)}</p>` : '',
+                item.test_final_date ? `<p>Final date: ${escapeHtml(item.test_final_date)}</p>` : '',
+                item.comments ? `<p>Comments: ${escapeHtml(item.comments)}</p>` : '',
+            ].join('');
+
+            el.innerHTML = `<div class="approval-item-head"><strong>${escapeHtml(item.situation || 'Appearance approval')}</strong><span class="approval-status approval-status-${escapeHtml((item.status || 'UNKNOWN').toLowerCase())}">${escapeHtml(item.status_label || 'Not specified')}</span></div>${details}`;
+            records.appendChild(el);
+        });
+    };
 
     const renderEmployee = (employee) => {
         currentEmployee = employee;
@@ -48,28 +119,8 @@
         document.getElementById('employee-id').textContent = employee.employee_id;
         document.getElementById('employee-role').textContent = employee.role;
 
-        const summary = document.getElementById('tattoo-summary');
-        const records = document.getElementById('tattoo-records');
-        records.innerHTML = '';
-
-        if (!employee.tattoos.has_record) {
-            summary.className = 'tattoo-summary unknown';
-            summary.textContent = 'No active tattoo record was found for this Employee ID.';
-        } else if (employee.tattoos.cover_required) {
-            summary.className = 'tattoo-summary cover';
-            summary.textContent = 'Tattoo record found — coverage is required.';
-        } else {
-            summary.className = 'tattoo-summary clear';
-            summary.textContent = 'Tattoo record found — coverage is not required.';
-        }
-
-        employee.tattoos.records.forEach((item) => {
-            const el = document.createElement('div');
-            el.className = 'tattoo-item';
-            const cover = item.should_be_covered === true ? 'Yes' : item.should_be_covered === false ? 'No' : 'Not specified';
-            el.innerHTML = `<strong>Cover required: ${cover}</strong><p>${escapeHtml(item.details || 'Tattoo record')}</p><p>Location: ${escapeHtml(item.location || 'Not specified')}</p>${item.connotation ? `<p>Connotation: ${escapeHtml(item.connotation)}</p>` : ''}`;
-            records.appendChild(el);
-        });
+        renderTattoos(employee.tattoos);
+        renderApprovals(employee.appearance_approvals);
     };
 
     const prependRecent = (record, isCheck) => {
@@ -99,7 +150,7 @@
             return;
         }
 
-        showMessage('Searching HiBob…', 'info');
+        showMessage('Searching HiBob and Appearance data…', 'info');
         try {
             const result = await postJson(shell.dataset.lookupUrl, { employee_id: employeeId });
             renderEmployee(result.employee);
