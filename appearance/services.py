@@ -34,7 +34,7 @@ def get_hibob_employee(employee_id):
     if not employee_id:
         return None
 
-    employees = HiBobEmployee.objects.filter(employee_id=employee_id)
+    employees = HiBobEmployee.objects.using("hibob").filter(employee_id=employee_id)
     active = employees.filter(lifecycle_status__iexact="active").first()
     return active or employees.first()
 
