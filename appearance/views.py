@@ -4,7 +4,7 @@ from io import BytesIO
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -33,11 +33,6 @@ SCHEDULE_DEFAULTS = {
     },
 }
 SHIFT_ORDER = ("MORNING", "AFTERNOON", "NIGHT")
-
-
-@login_required
-def process_selection(request):
-    return render(request, "appearance/process_selection.html")
 
 
 def _json_body(request):
@@ -108,6 +103,33 @@ def _schedule_rows(process):
             )
         rows.append(row)
     return rows
+
+
+@login_required
+def process_selection(request):
+    return render(
+        request,
+        "appearance/process_selection.html",
+        {
+            "preparation_schedule": _schedule_rows("PREPARATION"),
+            "check_schedule": _schedule_rows("CHECK"),
+        },
+    )
+
+
+@login_required
+def schedule_settings(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Only administrators can manage schedule settings.")
+
+    return render(
+        request,
+        "appearance/schedule_settings.html",
+        {
+            "preparation_schedule": _schedule_rows("PREPARATION"),
+            "check_schedule": _schedule_rows("CHECK"),
+        },
+    )
 
 
 def _history_filters(request, process):
