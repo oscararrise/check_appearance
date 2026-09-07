@@ -9,7 +9,12 @@ from django.views.decorators.http import require_GET, require_POST
 from openpyxl import Workbook
 
 from .models import AppearanceCheck, PreparationScan
-from .services import get_employee_profile, resolve_operational_shift, tattoo_payload
+from .services import (
+    appearance_approval_payload,
+    get_employee_profile,
+    resolve_operational_shift,
+    tattoo_payload,
+)
 
 
 @login_required
@@ -64,6 +69,7 @@ def lookup_employee(request):
                 "full_name": profile.full_name,
                 "role": profile.role,
                 "tattoos": tattoo_payload(profile),
+                "appearance_approvals": appearance_approval_payload(profile),
             },
         }
     )
