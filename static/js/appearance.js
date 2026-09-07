@@ -96,7 +96,6 @@
             el.className = 'medical-item';
             const dates = [
                 item.test_initial_date ? `<span><strong>From</strong>${escapeHtml(item.test_initial_date)}</span>` : '',
-                item.test_final_date ? `<span><strong>Until</strong>${escapeHtml(item.test_final_date)}</span>` : '',
             ].filter(Boolean).join('');
 
             el.innerHTML = `
@@ -152,7 +151,6 @@
                 `<p>Test time frame needed: ${escapeHtml(item.test_time_frame_needed || 'Not specified')}</p>`,
                 `<p>Paperwork submitted: ${escapeHtml(item.paperwork_submitted || 'Not specified')}</p>`,
                 item.test_initial_date ? `<p>Initial date: ${escapeHtml(item.test_initial_date)}</p>` : '',
-                item.test_final_date ? `<p>Final date: ${escapeHtml(item.test_final_date)}</p>` : '',
                 item.comments ? `<p>Comments: ${escapeHtml(item.comments)}</p>` : '',
             ].join('');
 
