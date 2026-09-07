@@ -29,16 +29,21 @@ def workspace(request, process):
         return JsonResponse({"error": "Invalid process."}, status=404)
 
     if process == "PREPARATION":
-        recent = PreparationScan.objects.select_related("recorded_by")[:25]
+        records = PreparationScan.objects.select_related("recorded_by")
         title = "Appearance Preparation"
     else:
-        recent = AppearanceCheck.objects.select_related("recorded_by")[:25]
+        records = AppearanceCheck.objects.select_related("recorded_by")
         title = "Appearance Check"
 
     return render(
         request,
         "appearance/workspace.html",
-        {"process": process, "process_title": title, "recent": recent},
+        {
+            "process": process,
+            "process_title": title,
+            "recent": records[:25],
+            "history": records[:100],
+        },
     )
 
 
@@ -47,6 +52,15 @@ def _json_body(request):
         return json.loads(request.body.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError):
         return {}
+
+
+def _record_timestamp_payload(record):
+    local_time = timezone.localtime(record.recorded_at)
+    return {
+        "recorded_date": local_time.strftime("%Y-%m-%d"),
+        "recorded_at": local_time.strftime("%H:%M:%S"),
+        "recorded_by": record.recorded_by.get_username(),
+    }
 
 
 @login_required
@@ -91,19 +105,17 @@ def record_preparation(request):
         shift=resolve_operational_shift(now),
         recorded_by=request.user,
     )
-    return JsonResponse(
-        {
-            "ok": True,
-            "record": {
-                "id": record.id,
-                "employee_id": record.employee_id,
-                "employee_name": record.employee_name,
-                "role": record.role,
-                "shift": record.get_shift_display(),
-                "recorded_at": timezone.localtime(record.recorded_at).strftime("%H:%M:%S"),
-            },
-        }
-    )
+    record_payload = {
+        "id": record.id,
+        "employee_id": record.employee_id,
+        "employee_name": record.employee_name,
+        "role": record.role,
+        "shift": record.get_shift_display(),
+        "status": "Registered",
+        "comment": "",
+        **_record_timestamp_payload(record),
+    }
+    return JsonResponse({"ok": True, "record": record_payload})
 
 
 @login_required
@@ -130,20 +142,17 @@ def record_check(request):
         comment=comment,
         recorded_by=request.user,
     )
-    return JsonResponse(
-        {
-            "ok": True,
-            "record": {
-                "id": record.id,
-                "employee_id": record.employee_id,
-                "employee_name": record.employee_name,
-                "status": record.get_status_display(),
-                "comment": record.comment,
-                "shift": record.get_shift_display(),
-                "recorded_at": timezone.localtime(record.recorded_at).strftime("%H:%M:%S"),
-            },
-        }
-    )
+    record_payload = {
+        "id": record.id,
+        "employee_id": record.employee_id,
+        "employee_name": record.employee_name,
+        "role": record.role,
+        "status": record.get_status_display(),
+        "comment": record.comment,
+        "shift": record.get_shift_display(),
+        **_record_timestamp_payload(record),
+    }
+    return JsonResponse({"ok": True, "record": record_payload})
 
 
 @login_required
