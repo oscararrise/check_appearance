@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="appearanceapprovalrecord",
-            index=models.Index(fields=["employee_id", "is_active"], name="appearance__employee_approval_idx"),
+            index=models.Index(fields=["employee_id", "is_active"], name="app_appr_emp_active_idx"),
         ),
         migrations.CreateModel(
             name="DataUpload",
