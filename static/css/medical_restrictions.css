@@ -1,0 +1,127 @@
+.medical-panel {
+    grid-column: 1 / -1;
+    border: 1px solid #ead8d3;
+    background: linear-gradient(180deg, #fff 0%, #fffaf8 100%);
+}
+
+.medical-icon {
+    background: #fbeae8;
+    color: #c0392b;
+}
+
+.medical-summary {
+    margin-top: 12px;
+    padding: 15px 16px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.45;
+}
+
+.medical-summary.flagged {
+    background: #fbeae8;
+    color: #a52f25;
+    border: 1px solid #efc9c4;
+}
+
+.medical-summary.clear {
+    background: #e8f7ee;
+    color: #197a43;
+    border: 1px solid #c8ead6;
+}
+
+.medical-summary.unknown {
+    background: #e8f0fd;
+    color: #2f6fd6;
+    border: 1px solid #d0def5;
+}
+
+.medical-records {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.medical-item {
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid #efd8d4;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(192, 57, 43, .05);
+}
+
+.medical-item-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.medical-item-head > div {
+    display: grid;
+    gap: 5px;
+}
+
+.medical-item-head strong {
+    color: #1c0f38;
+    font-size: 15px;
+}
+
+.medical-flag {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    min-height: 23px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #fbeae8;
+    color: #c0392b;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.medical-comment {
+    margin: 12px 0 0;
+    color: #4f4659;
+    line-height: 1.5;
+}
+
+.muted-copy {
+    color: #7d7689;
+}
+
+.medical-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.medical-meta > span {
+    display: grid;
+    gap: 3px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f7f5fb;
+    color: #6b6475;
+    font-size: 12px;
+}
+
+.medical-meta strong {
+    color: #35106a;
+    font-size: 10px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 680px) {
+    .medical-item-head {
+        flex-direction: column;
+    }
+
+    .medical-meta {
+        grid-template-columns: 1fr;
+    }
+}
