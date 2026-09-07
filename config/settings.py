@@ -51,16 +51,30 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
+DB_PORT = os.getenv("DB_PORT", "5432")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "arrise"),
-        "USER": os.getenv("DB_USER", "postgres"),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+        "NAME": os.getenv("DB_NAME", "check_appearance_db"),
+        "USER": DB_USER,
+        "PASSWORD": DB_PASSWORD,
+        "HOST": DB_HOST,
+        "PORT": DB_PORT,
         "CONN_MAX_AGE": 60,
-    }
+    },
+    "hibob": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("HIBOB_DB_NAME", "arrise_vm_db"),
+        "USER": os.getenv("HIBOB_DB_USER", DB_USER),
+        "PASSWORD": os.getenv("HIBOB_DB_PASSWORD", DB_PASSWORD),
+        "HOST": os.getenv("HIBOB_DB_HOST", DB_HOST),
+        "PORT": os.getenv("HIBOB_DB_PORT", DB_PORT),
+        "CONN_MAX_AGE": 60,
+    },
 }
 
 AUTH_PASSWORD_VALIDATORS = [
