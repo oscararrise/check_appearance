@@ -71,6 +71,54 @@
         });
     };
 
+    const renderMedicalRestrictions = (medical) => {
+        const summary = document.getElementById('medical-summary');
+        const records = document.getElementById('medical-records');
+        records.innerHTML = '';
+
+        if (!medical?.has_source_data) {
+            summary.className = 'medical-summary unknown';
+            summary.textContent = 'No medical restriction data was found in the current Appearance tracker.';
+            return;
+        }
+
+        if (!medical.has_flagged_condition) {
+            summary.className = 'medical-summary clear';
+            summary.textContent = 'No medical condition flag is marked in the current Appearance tracker.';
+            return;
+        }
+
+        summary.className = 'medical-summary flagged';
+        summary.textContent = 'Medical condition or restriction flagged — review the operational guidance before proceeding.';
+
+        medical.records.forEach((item) => {
+            const el = document.createElement('div');
+            el.className = 'medical-item';
+            const dates = [
+                item.test_initial_date ? `<span><strong>From</strong>${escapeHtml(item.test_initial_date)}</span>` : '',
+                item.test_final_date ? `<span><strong>Until</strong>${escapeHtml(item.test_final_date)}</span>` : '',
+            ].filter(Boolean).join('');
+
+            el.innerHTML = `
+                <div class="medical-item-head">
+                    <div>
+                        <span class="medical-flag">Medical flag</span>
+                        <strong>${escapeHtml(item.situation || 'Appearance restriction')}</strong>
+                    </div>
+                    <span class="approval-status approval-status-${escapeHtml((item.status || 'UNKNOWN').toLowerCase())}">${escapeHtml(item.status_label || 'Not specified')}</span>
+                </div>
+                ${item.comments ? `<p class="medical-comment">${escapeHtml(item.comments)}</p>` : '<p class="medical-comment muted-copy">No additional medical guidance was provided in the tracker.</p>'}
+                <div class="medical-meta">
+                    ${item.responsible ? `<span><strong>Responsible</strong>${escapeHtml(item.responsible)}</span>` : ''}
+                    <span><strong>Paperwork</strong>${escapeHtml(item.paperwork_submitted || 'Not specified')}</span>
+                    <span><strong>Test window</strong>${escapeHtml(item.test_time_frame_needed || 'Not specified')}</span>
+                    ${dates}
+                </div>
+            `;
+            records.appendChild(el);
+        });
+    };
+
     const renderApprovals = (approvals) => {
         const summary = document.getElementById('approval-summary');
         const records = document.getElementById('approval-records');
@@ -101,7 +149,6 @@
             el.className = 'approval-item';
             const details = [
                 item.responsible ? `<p>Responsible: ${escapeHtml(item.responsible)}</p>` : '',
-                `<p>Medical condition: ${escapeHtml(item.medical_condition || 'Not specified')}</p>`,
                 `<p>Test time frame needed: ${escapeHtml(item.test_time_frame_needed || 'Not specified')}</p>`,
                 `<p>Paperwork submitted: ${escapeHtml(item.paperwork_submitted || 'Not specified')}</p>`,
                 item.test_initial_date ? `<p>Initial date: ${escapeHtml(item.test_initial_date)}</p>` : '',
@@ -121,23 +168,9 @@
         document.getElementById('employee-name').textContent = employee.full_name;
         document.getElementById('employee-id').textContent = employee.employee_id;
         document.getElementById('employee-role').textContent = employee.role;
+        renderMedicalRestrictions(employee.appearance_approvals?.medical_restrictions);
         renderTattoos(employee.tattoos);
         renderApprovals(employee.appearance_approvals);
-    };
-
-    const prependRecent = (record, isCheck) => {
-        document.getElementById('empty-log')?.remove();
-        const list = document.getElementById('recent-list');
-        const item = document.createElement('div');
-        item.className = 'recent-item';
-        const status = isCheck ? `<span class="status-pill status-${statusClass(record.status)}">${escapeHtml(record.status)}</span>` : '';
-        item.innerHTML = `
-            <div class="recent-avatar">${escapeHtml(firstInitial(record.employee_name))}</div>
-            <div class="recent-copy"><strong>${escapeHtml(record.employee_name)}</strong><span>${escapeHtml(record.employee_id)} · ${escapeHtml(record.recorded_at)}</span></div>
-            ${status}
-        `;
-        list.prepend(item);
-        while (list.children.length > 25) list.lastElementChild.remove();
     };
 
     const prependHistory = (record, isCheck) => {
@@ -187,7 +220,6 @@
 
             if (process === 'PREPARATION') {
                 const saved = await postJson(shell.dataset.preparationUrl, { employee_id: result.employee.employee_id });
-                prependRecent(saved.record, false);
                 prependHistory(saved.record, false);
                 showMessage(`${result.employee.full_name} was registered for Appearance Preparation.`, 'success');
             } else {
@@ -221,7 +253,6 @@
                 status: selectedStatus,
                 comment: comment.value.trim(),
             });
-            prependRecent(saved.record, true);
             prependHistory(saved.record, true);
             showMessage(`${currentEmployee.full_name} was saved as ${saved.record.status}.`, 'success');
             resetCheckSelection();
