@@ -39,6 +39,7 @@
 
     const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(v => v[0]).join('').toUpperCase();
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+    const statusClass = (value) => String(value || '').toLowerCase().replaceAll(' ', '_');
 
     const renderTattoos = (tattoos) => {
         const summary = document.getElementById('tattoo-summary');
@@ -128,10 +129,34 @@
         const list = document.getElementById('recent-list');
         const item = document.createElement('div');
         item.className = 'recent-item';
-        const status = isCheck ? `<span class="status-pill status-${record.status.toLowerCase().replaceAll(' ', '_')}">${escapeHtml(record.status)}</span>` : '';
+        const status = isCheck ? `<span class="status-pill status-${statusClass(record.status)}">${escapeHtml(record.status)}</span>` : '';
         item.innerHTML = `<div><strong>${escapeHtml(record.employee_name)}</strong><span>${escapeHtml(record.employee_id)} · ${escapeHtml(record.recorded_at)}</span></div>${status}`;
         list.prepend(item);
         while (list.children.length > 25) list.lastElementChild.remove();
+    };
+
+    const prependHistory = (record, isCheck) => {
+        const tableBody = document.getElementById('history-table-body');
+        if (!tableBody) return;
+
+        document.getElementById('empty-history')?.remove();
+        const row = document.createElement('tr');
+        const status = isCheck ? record.status : 'Registered';
+        const comments = isCheck && record.comment ? record.comment : '—';
+
+        row.innerHTML = `
+            <td class="history-datetime">${escapeHtml(record.recorded_date)} ${escapeHtml(record.recorded_at)}</td>
+            <td><strong>${escapeHtml(record.employee_id)}</strong></td>
+            <td>${escapeHtml(record.employee_name)}</td>
+            <td>${escapeHtml(record.role || '—')}</td>
+            <td>${escapeHtml(record.shift || '—')}</td>
+            <td><span class="status-pill status-${statusClass(status)}">${escapeHtml(status)}</span></td>
+            <td class="history-comment">${escapeHtml(comments)}</td>
+            <td>${escapeHtml(record.recorded_by || '—')}</td>
+        `;
+
+        tableBody.prepend(row);
+        while (tableBody.children.length > 100) tableBody.lastElementChild.remove();
     };
 
     const resetCheckSelection = () => {
@@ -159,6 +184,7 @@
             if (process === 'PREPARATION') {
                 const saved = await postJson(shell.dataset.preparationUrl, { employee_id: result.employee.employee_id });
                 prependRecent(saved.record, false);
+                prependHistory(saved.record, false);
                 showMessage(`${result.employee.full_name} was registered for Appearance Preparation.`, 'success');
             } else {
                 showMessage(`${result.employee.full_name} loaded. Select an Appearance status.`, 'success');
@@ -192,6 +218,7 @@
                 comment: comment.value.trim(),
             });
             prependRecent(saved.record, true);
+            prependHistory(saved.record, true);
             showMessage(`${currentEmployee.full_name} was saved as ${saved.record.status}.`, 'success');
             resetCheckSelection();
             input.focus();
