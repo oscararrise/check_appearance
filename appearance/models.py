@@ -128,7 +128,7 @@ class AppearanceApprovalRecord(models.Model):
 
     class Meta:
         ordering = ["employee_id", "situation", "-created_at"]
-        indexes = [models.Index(fields=["employee_id", "is_active"])]
+        indexes = [models.Index(fields=["employee_id", "is_active"], name="app_appr_emp_active_idx")]
 
     def __str__(self):
         return f"{self.employee_id} - {self.situation or 'Appearance approval'} - {self.get_status_display()}"
