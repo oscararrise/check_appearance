@@ -157,6 +157,44 @@ class DataUpload(models.Model):
         return f"{self.file.name} - {self.status}"
 
 
+class ProcessSchedule(models.Model):
+    class Process(models.TextChoices):
+        PREPARATION = "PREPARATION", "Appearance Preparation"
+        CHECK = "CHECK", "Appearance Check"
+
+    class Shift(models.TextChoices):
+        MORNING = "MORNING", "Morning"
+        AFTERNOON = "AFTERNOON", "Afternoon"
+        NIGHT = "NIGHT", "Night"
+
+    process = models.CharField(max_length=20, choices=Process.choices, db_index=True)
+    shift = models.CharField(max_length=20, choices=Shift.choices)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="appearance_schedule_updates",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["process", "shift"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["process", "shift"],
+                name="app_sched_proc_shift_uniq",
+            )
+        ]
+        verbose_name = "Operating schedule"
+        verbose_name_plural = "Operating schedules"
+
+    def __str__(self):
+        return f"{self.get_process_display()} - {self.get_shift_display()} {self.start_time:%H:%M}-{self.end_time:%H:%M}"
+
+
 class OperationalRecord(models.Model):
     class Shift(models.TextChoices):
         MORNING = "MORNING", "Morning"
