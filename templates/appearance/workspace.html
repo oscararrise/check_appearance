@@ -6,100 +6,177 @@
      data-lookup-url="{% url 'appearance:lookup_employee' %}"
      data-preparation-url="{% url 'appearance:record_preparation' %}"
      data-check-url="{% url 'appearance:record_check' %}">
-    <header class="topbar compact">
-        <div>
-            <a class="back-link" href="{% url 'appearance:process_selection' %}">← Processes</a>
-            <h1>{{ process_title }}</h1>
-        </div>
-        <div class="topbar-actions">
-            <span class="user-chip">{{ request.user.username }}</span>
-            <a class="btn btn-light" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+
+    <header class="workspace-header">
+        <div class="workspace-header-inner">
+            <div class="workspace-brand-row">
+                <div class="brand-lockup brand-lockup-light">
+                    <span class="brand-symbol" aria-hidden="true">A</span>
+                    <div>
+                        <strong>ARRISE</strong>
+                        <span>Appearance Operations</span>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <span class="user-chip"><span class="user-dot" aria-hidden="true"></span>{{ request.user.username }}</span>
+                    <a class="btn btn-ghost" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+                </div>
+            </div>
+
+            <div class="workspace-title-row">
+                <div>
+                    <a class="back-link" href="{% url 'appearance:process_selection' %}"><span aria-hidden="true">←</span> All processes</a>
+                    <div class="workspace-title-line">
+                        <h1>{{ process_title }}</h1>
+                        {% if process == "PREPARATION" %}
+                        <span class="process-chip preparation-chip">Preparation</span>
+                        {% else %}
+                        <span class="process-chip check-chip">Validation</span>
+                        {% endif %}
+                    </div>
+                    <p class="workspace-subtitle">
+                        {% if process == "PREPARATION" %}
+                        Scan the employee to register arrival and review all appearance guidance in one place.
+                        {% else %}
+                        Scan the employee, review appearance guidance, then record the final operational status.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="workflow-steps" aria-label="Workflow steps">
+                    <span class="workflow-step active"><b>1</b> Scan</span>
+                    <span class="workflow-step"><b>2</b> Review</span>
+                    {% if process == "CHECK" %}<span class="workflow-step"><b>3</b> Decide</span>{% endif %}
+                </div>
+            </div>
         </div>
     </header>
 
-    <main class="tablet-layout">
+    <main class="workspace-layout">
         <section class="main-column">
             <article class="card scanner-card">
-                <div class="section-heading">
-                    <div>
-                        <p class="eyebrow">EMPLOYEE LOOKUP</p>
-                        <h2>Scan or enter Employee ID</h2>
+                <div class="scanner-accent" aria-hidden="true"></div>
+                <div class="section-heading scanner-heading">
+                    <div class="section-title-group">
+                        <span class="section-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 12h10"/></svg>
+                        </span>
+                        <div>
+                            <p class="eyebrow">EMPLOYEE LOOKUP</p>
+                            <h2>Scan or enter Employee ID</h2>
+                        </div>
                     </div>
-                    <span class="mode-badge">Scanner + manual entry</span>
+                    <span class="mode-badge"><span class="mode-dot"></span>Scanner ready</span>
                 </div>
+
                 <form id="scan-form" class="scan-row">
                     {% csrf_token %}
-                    <input id="employee-id-input" class="scan-input" inputmode="numeric" autocomplete="off" placeholder="Employee ID" aria-label="Employee ID">
-                    <button class="btn btn-primary btn-large" type="submit">Search</button>
+                    <div class="scan-input-wrap">
+                        <span class="scan-input-icon" aria-hidden="true">#</span>
+                        <input id="employee-id-input" class="scan-input" inputmode="numeric" autocomplete="off" placeholder="Employee ID" aria-label="Employee ID">
+                    </div>
+                    <button class="btn btn-primary btn-large scan-button" type="submit">Search employee <span aria-hidden="true">→</span></button>
                 </form>
-                <p class="helper">A USB scanner can type the ID into this field and press Enter. If no reader is available, type the Employee ID manually and press Enter.</p>
+                <div class="scanner-helper-row">
+                    <p class="helper">Use a USB scanner or type the Employee ID manually. Press Enter to continue.</p>
+                    <span class="keyboard-hint">ENTER ↵</span>
+                </div>
                 <div id="message" class="alert hidden" role="status"></div>
             </article>
 
             <article id="employee-card" class="card employee-card hidden">
                 <div class="employee-head">
                     <div class="avatar" id="employee-initials">--</div>
-                    <div>
-                        <p class="eyebrow">EMPLOYEE</p>
+                    <div class="employee-identity">
+                        <p class="eyebrow">EMPLOYEE PROFILE</p>
                         <h2 id="employee-name">Employee</h2>
-                        <div class="employee-meta"><span id="employee-id"></span><span>•</span><span id="employee-role"></span></div>
+                        <div class="employee-meta">
+                            <span class="employee-id-badge" id="employee-id"></span>
+                            <span class="meta-divider">•</span>
+                            <span id="employee-role"></span>
+                        </div>
                     </div>
+                    <span class="profile-source">HiBob verified</span>
                 </div>
 
-                <section class="employee-data-section">
-                    <p class="eyebrow">TATTOO INFORMATION</p>
-                    <div id="tattoo-summary" class="tattoo-summary"></div>
-                    <div id="tattoo-records" class="tattoo-records"></div>
-                </section>
+                <div class="employee-data-grid">
+                    <section class="employee-data-section data-panel">
+                        <div class="data-panel-heading">
+                            <span class="data-panel-icon tattoo-icon" aria-hidden="true">T</span>
+                            <div><p class="eyebrow">TATTOO INFORMATION</p><h3>Coverage guidance</h3></div>
+                        </div>
+                        <div id="tattoo-summary" class="tattoo-summary"></div>
+                        <div id="tattoo-records" class="tattoo-records"></div>
+                    </section>
 
-                <section class="employee-data-section">
-                    <p class="eyebrow">APPEARANCE APPROVALS</p>
-                    <div id="approval-summary" class="approval-summary"></div>
-                    <div id="approval-records" class="approval-records"></div>
-                </section>
+                    <section class="employee-data-section data-panel">
+                        <div class="data-panel-heading">
+                            <span class="data-panel-icon approval-icon" aria-hidden="true">✓</span>
+                            <div><p class="eyebrow">APPEARANCE APPROVALS</p><h3>Exceptions & restrictions</h3></div>
+                        </div>
+                        <div id="approval-summary" class="approval-summary"></div>
+                        <div id="approval-records" class="approval-records"></div>
+                    </section>
+                </div>
 
                 {% if process == "CHECK" %}
                 <section class="check-panel">
-                    <p class="eyebrow">APPEARANCE STATUS</p>
-                    <div class="status-grid" role="group" aria-label="Appearance status">
-                        <button type="button" class="status-btn ready" data-status="READY">Ready</button>
-                        <button type="button" class="status-btn warning" data-status="NOT_READY">Not Ready</button>
-                        <button type="button" class="status-btn declined" data-status="DECLINED">Declined</button>
+                    <div class="check-panel-heading">
+                        <div>
+                            <p class="eyebrow">FINAL DECISION</p>
+                            <h3>Set appearance status</h3>
+                            <p>Choose one status after reviewing the employee information above.</p>
+                        </div>
+                        <span class="required-chip">Required</span>
                     </div>
-                    <label class="field">
-                        <span>Comment</span>
-                        <textarea id="check-comment" rows="3" maxlength="500" placeholder="Short operational note"></textarea>
+                    <div class="status-grid" role="group" aria-label="Appearance status">
+                        <button type="button" class="status-btn ready" data-status="READY"><span class="status-choice-icon">✓</span><span><strong>Ready</strong><small>Employee can proceed</small></span></button>
+                        <button type="button" class="status-btn warning" data-status="NOT_READY"><span class="status-choice-icon">!</span><span><strong>Not Ready</strong><small>Correction is required</small></span></button>
+                        <button type="button" class="status-btn declined" data-status="DECLINED"><span class="status-choice-icon">×</span><span><strong>Declined</strong><small>Employee cannot proceed</small></span></button>
+                    </div>
+                    <label class="field comment-field">
+                        <span>Operational comment <small>Optional unless context is needed</small></span>
+                        <textarea id="check-comment" rows="3" maxlength="500" placeholder="Add a short, clear note for the operations history…"></textarea>
                     </label>
-                    <button id="save-check" type="button" class="btn btn-primary btn-large btn-full" disabled>Save Appearance Check</button>
+                    <button id="save-check" type="button" class="btn btn-primary btn-large btn-full" disabled>Save Appearance Check <span aria-hidden="true">→</span></button>
                 </section>
                 {% endif %}
             </article>
         </section>
 
         <aside class="side-column">
-            <article class="card schedule-card">
-                <p class="eyebrow">OFFICIAL WINDOWS</p>
-                {% if process == "PREPARATION" %}
-                <div class="schedule-line"><strong>Morning</strong><span>6:00 AM – 8:00 AM</span></div>
-                <div class="schedule-line"><strong>Afternoon</strong><span>2:00 PM – 4:00 PM</span></div>
-                <div class="schedule-line"><strong>Night</strong><span>10:00 PM – 12:00 AM</span></div>
-                {% else %}
-                <div class="schedule-line"><strong>Morning</strong><span>6:50 AM – 7:30 AM</span></div>
-                <div class="schedule-line"><strong>Afternoon</strong><span>2:50 PM – 3:30 PM</span></div>
-                <div class="schedule-line"><strong>Night</strong><span>10:50 PM – 11:30 PM</span></div>
-                {% endif %}
+            <article class="card schedule-card sticky-card">
+                <div class="side-card-heading">
+                    <span class="section-icon small" aria-hidden="true">◷</span>
+                    <div><p class="eyebrow">OFFICIAL WINDOWS</p><h2>Operating schedule</h2></div>
+                </div>
+                <p class="side-card-copy">Use these windows as the official process reference.</p>
+                <div class="schedule-list">
+                    {% if process == "PREPARATION" %}
+                    <div class="schedule-line"><span class="shift-dot morning"></span><div><strong>Morning</strong><small>Preparation window</small></div><time>6:00–8:00</time></div>
+                    <div class="schedule-line"><span class="shift-dot afternoon"></span><div><strong>Afternoon</strong><small>Preparation window</small></div><time>14:00–16:00</time></div>
+                    <div class="schedule-line"><span class="shift-dot night"></span><div><strong>Night</strong><small>Preparation window</small></div><time>22:00–00:00</time></div>
+                    {% else %}
+                    <div class="schedule-line"><span class="shift-dot morning"></span><div><strong>Morning</strong><small>Check window</small></div><time>6:50–7:30</time></div>
+                    <div class="schedule-line"><span class="shift-dot afternoon"></span><div><strong>Afternoon</strong><small>Check window</small></div><time>14:50–15:30</time></div>
+                    <div class="schedule-line"><span class="shift-dot night"></span><div><strong>Night</strong><small>Check window</small></div><time>22:50–23:30</time></div>
+                    {% endif %}
+                </div>
             </article>
 
             <article class="card recent-card">
-                <div class="section-heading small"><div><p class="eyebrow">LIVE LOG</p><h2>Recent activity</h2></div></div>
+                <div class="side-card-heading">
+                    <span class="section-icon small" aria-hidden="true">↻</span>
+                    <div><p class="eyebrow">LIVE LOG</p><h2>Recent activity</h2></div>
+                </div>
                 <div id="recent-list" class="recent-list">
                     {% for item in recent %}
                     <div class="recent-item">
-                        <div><strong>{{ item.employee_name }}</strong><span>{{ item.employee_id }} · {{ item.recorded_at|date:"H:i:s" }}</span></div>
+                        <div class="recent-avatar">{{ item.employee_name|slice:":1"|upper }}</div>
+                        <div class="recent-copy"><strong>{{ item.employee_name }}</strong><span>{{ item.employee_id }} · {{ item.recorded_at|date:"H:i:s" }}</span></div>
                         {% if process == "CHECK" %}<span class="status-pill status-{{ item.status|lower }}">{{ item.get_status_display }}</span>{% endif %}
                     </div>
                     {% empty %}
-                    <p id="empty-log" class="muted">No records yet.</p>
+                    <div id="empty-log" class="empty-state compact"><span>○</span><p>No records yet.</p></div>
                     {% endfor %}
                 </div>
             </article>
@@ -108,13 +185,19 @@
 
     <section class="history-shell">
         <article class="card history-card">
-            <div class="section-heading history-heading">
-                <div>
-                    <p class="eyebrow">PROCESS HISTORY</p>
-                    <h2>Latest activity</h2>
-                    <p class="helper">Showing the latest 100 records for this process.</p>
+            <div class="history-heading">
+                <div class="history-title-wrap">
+                    <span class="section-icon" aria-hidden="true">↟</span>
+                    <div>
+                        <p class="eyebrow">PROCESS HISTORY</p>
+                        <h2>Activity history</h2>
+                        <p class="helper">Latest 100 records for this workflow, including decisions and operator comments.</p>
+                    </div>
                 </div>
-                <a class="btn btn-primary" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+                <div class="history-actions">
+                    <span class="history-count">{{ history|length }} shown</span>
+                    <a class="btn btn-secondary" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+                </div>
             </div>
 
             <div class="history-table-wrap">
@@ -122,7 +205,6 @@
                     <thead>
                         <tr>
                             <th>Date & time</th>
-                            <th>Employee ID</th>
                             <th>Employee</th>
                             <th>Role</th>
                             <th>Shift</th>
@@ -134,11 +216,15 @@
                     <tbody id="history-table-body">
                         {% for item in history %}
                         <tr>
-                            <td class="history-datetime">{{ item.recorded_at|date:"Y-m-d H:i:s" }}</td>
-                            <td><strong>{{ item.employee_id }}</strong></td>
-                            <td>{{ item.employee_name }}</td>
-                            <td>{{ item.role|default:"—" }}</td>
-                            <td>{{ item.get_shift_display }}</td>
+                            <td class="history-datetime"><strong>{{ item.recorded_at|date:"M d" }}</strong><span>{{ item.recorded_at|date:"H:i:s" }}</span></td>
+                            <td>
+                                <div class="history-employee">
+                                    <span class="table-avatar">{{ item.employee_name|slice:":1"|upper }}</span>
+                                    <div><strong>{{ item.employee_name }}</strong><span class="employee-id-inline">ID {{ item.employee_id }}</span></div>
+                                </div>
+                            </td>
+                            <td class="history-role">{{ item.role|default:"—" }}</td>
+                            <td><span class="shift-pill shift-{{ item.shift|lower }}">{{ item.get_shift_display }}</span></td>
                             <td>
                                 {% if process == "CHECK" %}
                                 <span class="status-pill status-{{ item.status|lower }}">{{ item.get_status_display }}</span>
@@ -146,15 +232,11 @@
                                 <span class="status-pill status-registered">Registered</span>
                                 {% endif %}
                             </td>
-                            <td class="history-comment">
-                                {% if process == "CHECK" %}{{ item.comment|default:"—" }}{% else %}—{% endif %}
-                            </td>
-                            <td>{{ item.recorded_by.get_username }}</td>
+                            <td class="history-comment">{% if process == "CHECK" %}{{ item.comment|default:"—" }}{% else %}—{% endif %}</td>
+                            <td><span class="recorded-by">{{ item.recorded_by.get_username }}</span></td>
                         </tr>
                         {% empty %}
-                        <tr id="empty-history">
-                            <td colspan="8" class="history-empty">No process history yet.</td>
-                        </tr>
+                        <tr id="empty-history"><td colspan="7" class="history-empty"><div class="empty-state"><span>○</span><p>No process history yet.</p></div></td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
