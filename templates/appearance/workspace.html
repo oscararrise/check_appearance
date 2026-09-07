@@ -99,6 +99,15 @@
                 </div>
 
                 <div class="employee-data-grid">
+                    <section class="employee-data-section data-panel medical-panel">
+                        <div class="data-panel-heading">
+                            <span class="data-panel-icon medical-icon" aria-hidden="true">+</span>
+                            <div><p class="eyebrow">MEDICAL RESTRICTIONS</p><h3>Operational medical guidance</h3></div>
+                        </div>
+                        <div id="medical-summary" class="medical-summary"></div>
+                        <div id="medical-records" class="medical-records"></div>
+                    </section>
+
                     <section class="employee-data-section data-panel">
                         <div class="data-panel-heading">
                             <span class="data-panel-icon tattoo-icon" aria-hidden="true">T</span>
@@ -160,24 +169,6 @@
                     <div class="schedule-line"><span class="shift-dot afternoon"></span><div><strong>Afternoon</strong><small>Check window</small></div><time>14:50–15:30</time></div>
                     <div class="schedule-line"><span class="shift-dot night"></span><div><strong>Night</strong><small>Check window</small></div><time>22:50–23:30</time></div>
                     {% endif %}
-                </div>
-            </article>
-
-            <article class="card recent-card">
-                <div class="side-card-heading">
-                    <span class="section-icon small" aria-hidden="true">↻</span>
-                    <div><p class="eyebrow">LIVE LOG</p><h2>Recent activity</h2></div>
-                </div>
-                <div id="recent-list" class="recent-list">
-                    {% for item in recent %}
-                    <div class="recent-item">
-                        <div class="recent-avatar">{{ item.employee_name|slice:":1"|upper }}</div>
-                        <div class="recent-copy"><strong>{{ item.employee_name }}</strong><span>{{ item.employee_id }} · {{ item.recorded_at|date:"H:i:s" }}</span></div>
-                        {% if process == "CHECK" %}<span class="status-pill status-{{ item.status|lower }}">{{ item.get_status_display }}</span>{% endif %}
-                    </div>
-                    {% empty %}
-                    <div id="empty-log" class="empty-state compact"><span>○</span><p>No records yet.</p></div>
-                    {% endfor %}
                 </div>
             </article>
         </aside>
