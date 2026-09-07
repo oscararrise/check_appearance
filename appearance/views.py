@@ -56,6 +56,41 @@ def _record_timestamp_payload(record):
     }
 
 
+def _operational_record_payload(record, process):
+    if record is None:
+        return None
+    is_check = process == "CHECK"
+    return {
+        "id": record.id,
+        "employee_id": record.employee_id,
+        "employee_name": record.employee_name,
+        "role": record.role,
+        "shift": record.get_shift_display(),
+        "status": record.get_status_display() if is_check else "Registered",
+        "comment": record.comment if is_check else "",
+        "process": process,
+        **_record_timestamp_payload(record),
+    }
+
+
+def _latest_employee_record(employee_id, process):
+    if process == "CHECK":
+        record = (
+            AppearanceCheck.objects.filter(employee_id=employee_id)
+            .select_related("recorded_by")
+            .order_by("-recorded_at")
+            .first()
+        )
+    else:
+        record = (
+            PreparationScan.objects.filter(employee_id=employee_id)
+            .select_related("recorded_by")
+            .order_by("-recorded_at")
+            .first()
+        )
+    return _operational_record_payload(record, process)
+
+
 def _schedule_rows(process):
     existing = {
         row.shift: row
@@ -162,6 +197,10 @@ def workspace(request, process):
 def lookup_employee(request):
     payload = _json_body(request)
     employee_id = str(payload.get("employee_id", "")).strip()
+    process = str(payload.get("process", "CHECK")).upper()
+    if process not in {"PREPARATION", "CHECK"}:
+        process = "CHECK"
+
     profile = get_employee_profile(employee_id)
     if profile is None:
         return JsonResponse(
@@ -178,6 +217,7 @@ def lookup_employee(request):
                 "role": profile.role,
                 "tattoos": tattoo_payload(profile),
                 "appearance_approvals": appearance_approval_payload(profile),
+                "latest_process_record": _latest_employee_record(profile.employee_id, process),
             },
         }
     )
@@ -199,17 +239,7 @@ def record_preparation(request):
         shift=resolve_operational_shift(now),
         recorded_by=request.user,
     )
-    record_payload = {
-        "id": record.id,
-        "employee_id": record.employee_id,
-        "employee_name": record.employee_name,
-        "role": record.role,
-        "shift": record.get_shift_display(),
-        "status": "Registered",
-        "comment": "",
-        **_record_timestamp_payload(record),
-    }
-    return JsonResponse({"ok": True, "record": record_payload})
+    return JsonResponse({"ok": True, "record": _operational_record_payload(record, "PREPARATION")})
 
 
 @login_required
@@ -236,17 +266,7 @@ def record_check(request):
         comment=comment,
         recorded_by=request.user,
     )
-    record_payload = {
-        "id": record.id,
-        "employee_id": record.employee_id,
-        "employee_name": record.employee_name,
-        "role": record.role,
-        "status": record.get_status_display(),
-        "comment": record.comment,
-        "shift": record.get_shift_display(),
-        **_record_timestamp_payload(record),
-    }
-    return JsonResponse({"ok": True, "record": record_payload})
+    return JsonResponse({"ok": True, "record": _operational_record_payload(record, "CHECK")})
 
 
 def _parse_clock(value):
