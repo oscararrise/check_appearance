@@ -83,7 +83,7 @@ button { touch-action: manipulation; }
 .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
 .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .section-heading.small h2 { font-size: 22px; }
-.section-heading h2, .employee-card h2 { margin: 0; color: var(--color-ink); }
+.section-heading h2, .employee-card h2, .history-card h2 { margin: 0; color: var(--color-ink); }
 .mode-badge { background: var(--color-primary-soft); color: var(--color-primary); border-radius: 999px; padding: 8px 11px; font-size: 12px; font-weight: 800; white-space: nowrap; }
 .scan-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; margin-top: 20px; }
 .scan-input { min-height: 62px; padding: 0 18px; font-size: 24px; font-weight: 800; letter-spacing: .02em; }
@@ -96,14 +96,25 @@ button { touch-action: manipulation; }
 .employee-head { display: flex; align-items: center; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border); }
 .avatar { width: 68px; height: 68px; border-radius: 18px; display: grid; place-items: center; background: var(--color-primary-soft); color: var(--color-primary); font-size: 22px; font-weight: 900; }
 .employee-meta { display: flex; gap: 8px; flex-wrap: wrap; color: var(--color-text-secondary); margin-top: 6px; }
-.tattoo-summary { margin-top: 20px; padding: 16px; border-radius: 14px; font-weight: 800; }
+.employee-data-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--color-border); }
+.employee-data-section:first-of-type { border-top: 0; padding-top: 0; }
+.tattoo-summary, .approval-summary { margin-top: 12px; padding: 16px; border-radius: 14px; font-weight: 800; }
 .tattoo-summary.cover { background: var(--warning-bg); color: var(--warning); }
 .tattoo-summary.clear { background: var(--success-bg); color: var(--success); }
-.tattoo-summary.unknown { background: var(--info-bg); color: var(--info); }
-.tattoo-records { display: grid; gap: 10px; margin-top: 12px; }
-.tattoo-item { background: var(--color-surface-secondary); border: 1px solid var(--color-border); border-radius: 12px; padding: 14px; }
-.tattoo-item strong { color: var(--color-ink); }
-.tattoo-item p { margin: 6px 0 0; color: var(--color-text-secondary); line-height: 1.45; }
+.tattoo-summary.unknown, .approval-summary.unknown { background: var(--info-bg); color: var(--info); }
+.approval-summary.approved { background: var(--success-bg); color: var(--success); }
+.approval-summary.pending { background: var(--warning-bg); color: var(--warning); }
+.approval-summary.rejected { background: var(--error-bg); color: var(--error); }
+.tattoo-records, .approval-records { display: grid; gap: 10px; margin-top: 12px; }
+.tattoo-item, .approval-item { background: var(--color-surface-secondary); border: 1px solid var(--color-border); border-radius: 12px; padding: 14px; }
+.tattoo-item strong, .approval-item strong { color: var(--color-ink); }
+.tattoo-item p, .approval-item p { margin: 6px 0 0; color: var(--color-text-secondary); line-height: 1.45; }
+.approval-item-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.approval-status { border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight: 900; white-space: nowrap; }
+.approval-status-approved { background: var(--success-bg); color: var(--success); }
+.approval-status-rejected { background: var(--error-bg); color: var(--error); }
+.approval-status-in_progress { background: var(--warning-bg); color: var(--warning); }
+.approval-status-unknown { background: var(--info-bg); color: var(--info); }
 
 .check-panel { margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--color-border); display: grid; gap: 18px; }
 .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -121,10 +132,24 @@ button { touch-action: manipulation; }
 .recent-item:last-child { border-bottom: 0; }
 .recent-item div { display: grid; gap: 3px; }
 .recent-item div span { color: var(--color-text-tertiary); font-size: 12px; }
-.status-pill { border-radius: 999px; padding: 6px 9px; font-size: 11px; font-weight: 900; white-space: nowrap; }
+.status-pill { border-radius: 999px; padding: 6px 9px; font-size: 11px; font-weight: 900; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
 .status-ready { background: var(--success-bg); color: var(--success); }
 .status-not_ready { background: var(--warning-bg); color: var(--warning); }
 .status-declined { background: var(--error-bg); color: var(--error); }
+.status-registered { background: var(--info-bg); color: var(--info); }
+
+.history-shell { width: min(100%, 1380px); margin: 0 auto; padding: 0 24px 32px; }
+.history-card { overflow: hidden; }
+.history-heading { align-items: center; margin-bottom: 18px; }
+.history-table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--color-border); border-radius: 14px; }
+.history-table { width: 100%; min-width: 1080px; border-collapse: collapse; background: #fff; font-size: 13px; }
+.history-table th { background: var(--color-surface-secondary); color: var(--color-text-secondary); text-align: left; padding: 12px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+.history-table td { padding: 13px 14px; border-bottom: 1px solid var(--color-border); vertical-align: top; color: var(--color-text-primary); }
+.history-table tbody tr:last-child td { border-bottom: 0; }
+.history-table tbody tr:hover { background: #fbfafd; }
+.history-datetime { white-space: nowrap; color: var(--color-text-secondary) !important; }
+.history-comment { min-width: 220px; max-width: 360px; color: var(--color-text-secondary) !important; line-height: 1.4; }
+.history-empty { padding: 28px !important; text-align: center; color: var(--color-text-tertiary) !important; }
 
 @media (max-width: 900px) {
     .tablet-layout { grid-template-columns: 1fr; }
@@ -137,10 +162,14 @@ button { touch-action: manipulation; }
     .topbar-actions { justify-content: flex-start; }
     .selection-grid { grid-template-columns: 1fr; padding-top: 28px; }
     .tablet-layout { padding: 14px; }
+    .history-shell { padding: 0 14px 24px; }
     .card { padding: 18px; }
     .scan-row { grid-template-columns: 1fr; }
     .side-column { grid-template-columns: 1fr; }
     .status-grid { grid-template-columns: 1fr; }
     .status-btn { min-height: 58px; }
     .mode-badge { display: none; }
+    .history-heading { align-items: flex-start; flex-direction: column; }
+    .history-heading .btn { width: 100%; }
+    .approval-item-head { align-items: flex-start; flex-direction: column; }
 }
