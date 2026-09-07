@@ -6,6 +6,7 @@ app_name = "appearance"
 
 urlpatterns = [
     path("", views.process_selection, name="process_selection"),
+    path("settings/schedule/", views.schedule_settings, name="schedule_settings"),
     path("workspace/<str:process>/", views.workspace, name="workspace"),
     path("api/employee/lookup/", views.lookup_employee, name="lookup_employee"),
     path("api/preparation/record/", views.record_preparation, name="record_preparation"),
