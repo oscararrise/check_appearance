@@ -2,31 +2,75 @@
 {% block title %}Select process | ARRISE Appearance{% endblock %}
 {% block body %}
 <div class="app-shell">
-    <header class="topbar">
-        <div>
-            <p class="eyebrow light">ARRISE APPEARANCE</p>
-            <h1>Select a process</h1>
+    <header class="app-header">
+        <div class="brand-lockup brand-lockup-light">
+            <span class="brand-symbol" aria-hidden="true">A</span>
+            <div>
+                <strong>ARRISE</strong>
+                <span>Appearance Operations</span>
+            </div>
         </div>
         <div class="topbar-actions">
-            <span class="user-chip">{{ request.user.username }}</span>
-            {% if request.user.is_staff %}<a class="btn btn-light" href="/admin/">Admin</a>{% endif %}
-            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-light" type="submit">Sign out</button></form>
+            <span class="user-chip"><span class="user-dot" aria-hidden="true"></span>{{ request.user.username }}</span>
+            {% if request.user.is_staff %}<a class="btn btn-ghost" href="/admin/">Admin</a>{% endif %}
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-ghost" type="submit">Sign out</button></form>
         </div>
     </header>
 
-    <main class="selection-grid">
-        <a class="process-card" href="{% url 'appearance:workspace' 'PREPARATION' %}">
-            <span class="process-kicker">01</span>
-            <h2>Appearance Preparation</h2>
-            <p>Register arrival to the Makeup area and immediately review employee and tattoo information.</p>
-            <span class="process-link">Open Preparation →</span>
-        </a>
-        <a class="process-card" href="{% url 'appearance:workspace' 'CHECK' %}">
-            <span class="process-kicker">02</span>
-            <h2>Appearance Check</h2>
-            <p>Review the employee, select Ready, Not Ready or Declined, and save an operational comment.</p>
-            <span class="process-link">Open Check →</span>
-        </a>
+    <main class="selection-page">
+        <section class="selection-intro">
+            <div>
+                <p class="eyebrow">WORKFLOW</p>
+                <h1>What do you need to do?</h1>
+                <p class="selection-subtitle">Choose the operation. Each workflow is optimized for fast scanning, clear employee context and minimal taps.</p>
+            </div>
+            <div class="selection-tip">
+                <span class="tip-icon" aria-hidden="true">⌁</span>
+                <div><strong>Scanner ready</strong><span>USB scanners can enter the Employee ID and submit automatically.</span></div>
+            </div>
+        </section>
+
+        <section class="selection-grid">
+            <a class="process-card preparation" href="{% url 'appearance:workspace' 'PREPARATION' %}">
+                <div class="process-card-top">
+                    <span class="process-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg>
+                    </span>
+                    <span class="process-number">01</span>
+                </div>
+                <div class="process-copy">
+                    <p class="eyebrow">PREPARATION</p>
+                    <h2>Appearance Preparation</h2>
+                    <p>Register arrival to Makeup and immediately review employee, tattoo and approval information.</p>
+                </div>
+                <div class="process-window-list">
+                    <span><strong>Morning</strong> 6:00–8:00</span>
+                    <span><strong>Afternoon</strong> 14:00–16:00</span>
+                    <span><strong>Night</strong> 22:00–00:00</span>
+                </div>
+                <span class="process-link">Start preparation <b aria-hidden="true">→</b></span>
+            </a>
+
+            <a class="process-card check" href="{% url 'appearance:workspace' 'CHECK' %}">
+                <div class="process-card-top">
+                    <span class="process-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 12 3 3 7-7"/><circle cx="12" cy="12" r="9"/></svg>
+                    </span>
+                    <span class="process-number">02</span>
+                </div>
+                <div class="process-copy">
+                    <p class="eyebrow">VALIDATION</p>
+                    <h2>Appearance Check</h2>
+                    <p>Review the employee, choose Ready, Not Ready or Declined, and save an operational comment.</p>
+                </div>
+                <div class="process-window-list">
+                    <span><strong>Morning</strong> 6:50–7:30</span>
+                    <span><strong>Afternoon</strong> 14:50–15:30</span>
+                    <span><strong>Night</strong> 22:50–23:30</span>
+                </div>
+                <span class="process-link">Start appearance check <b aria-hidden="true">→</b></span>
+            </a>
+        </section>
     </main>
 </div>
 {% endblock %}
