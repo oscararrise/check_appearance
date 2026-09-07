@@ -116,7 +116,8 @@ class Command(BaseCommand):
 
             employee_ids = [row["employee_id"] for row in rows if row["employee_id"]]
             known_ids = set(
-                HiBobEmployee.objects.filter(employee_id__in=employee_ids)
+                HiBobEmployee.objects.using("hibob")
+                .filter(employee_id__in=employee_ids)
                 .values_list("employee_id", flat=True)
                 .distinct()
             )
