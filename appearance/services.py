@@ -97,23 +97,34 @@ def tattoo_payload(profile):
     }
 
 
+def _approval_record_payload(item):
+    return {
+        "situation": item.situation,
+        "status": item.status,
+        "status_label": item.get_status_display(),
+        "responsible": item.responsible,
+        "test_time_frame_needed": item.get_test_time_frame_needed_display(),
+        "medical_condition": item.get_medical_condition_display(),
+        "paperwork_submitted": item.get_paperwork_submitted_display(),
+        "test_initial_date": item.test_initial_date.isoformat() if item.test_initial_date else item.test_initial_date_raw,
+        "test_final_date": item.test_final_date.isoformat() if item.test_final_date else item.test_final_date_raw,
+        "comments": item.comments,
+    }
+
+
 def appearance_approval_payload(profile):
     records = profile.appearance_approval_records
+    medical_records = [
+        item for item in records
+        if item.medical_condition == AppearanceApprovalRecord.Answer.YES
+    ]
+
     return {
         "has_record": bool(records),
-        "records": [
-            {
-                "situation": item.situation,
-                "status": item.status,
-                "status_label": item.get_status_display(),
-                "responsible": item.responsible,
-                "test_time_frame_needed": item.get_test_time_frame_needed_display(),
-                "medical_condition": item.get_medical_condition_display(),
-                "paperwork_submitted": item.get_paperwork_submitted_display(),
-                "test_initial_date": item.test_initial_date.isoformat() if item.test_initial_date else item.test_initial_date_raw,
-                "test_final_date": item.test_final_date.isoformat() if item.test_final_date else item.test_final_date_raw,
-                "comments": item.comments,
-            }
-            for item in records
-        ],
+        "records": [_approval_record_payload(item) for item in records],
+        "medical_restrictions": {
+            "has_source_data": bool(records),
+            "has_flagged_condition": bool(medical_records),
+            "records": [_approval_record_payload(item) for item in medical_records],
+        },
     }
