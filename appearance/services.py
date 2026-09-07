@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import time
 
-from .models import HiBobEmployee, TattooRecord
+from .models import AppearanceApprovalRecord, HiBobEmployee, TattooRecord
 
 
 @dataclass(frozen=True)
@@ -10,6 +10,7 @@ class EmployeeProfile:
     full_name: str
     role: str
     tattoo_records: list
+    appearance_approval_records: list
 
     @property
     def has_tattoo_record(self):
@@ -18,6 +19,10 @@ class EmployeeProfile:
     @property
     def cover_required(self):
         return any(record.should_be_covered is True for record in self.tattoo_records)
+
+    @property
+    def has_appearance_approval_record(self):
+        return bool(self.appearance_approval_records)
 
 
 def normalize_employee_id(value):
@@ -47,12 +52,17 @@ def get_employee_profile(employee_id):
     name = (employee.full_name or employee.display_name or "Employee").strip()
     role = (employee.role or employee.raw_role or "Role not available").strip()
     tattoos = list(TattooRecord.objects.filter(employee_id=employee.employee_id, is_active=True))
+    approvals = list(
+        AppearanceApprovalRecord.objects.filter(employee_id=employee.employee_id, is_active=True)
+        .order_by("situation", "id")
+    )
 
     return EmployeeProfile(
         employee_id=employee.employee_id,
         full_name=name,
         role=role,
         tattoo_records=tattoos,
+        appearance_approval_records=approvals,
     )
 
 
@@ -81,6 +91,28 @@ def tattoo_payload(profile):
                 "location": item.location,
                 "connotation": item.connotation,
                 "should_be_covered": item.should_be_covered,
+            }
+            for item in records
+        ],
+    }
+
+
+def appearance_approval_payload(profile):
+    records = profile.appearance_approval_records
+    return {
+        "has_record": bool(records),
+        "records": [
+            {
+                "situation": item.situation,
+                "status": item.status,
+                "status_label": item.get_status_display(),
+                "responsible": item.responsible,
+                "test_time_frame_needed": item.get_test_time_frame_needed_display(),
+                "medical_condition": item.get_medical_condition_display(),
+                "paperwork_submitted": item.get_paperwork_submitted_display(),
+                "test_initial_date": item.test_initial_date.isoformat() if item.test_initial_date else item.test_initial_date_raw,
+                "test_final_date": item.test_final_date.isoformat() if item.test_final_date else item.test_final_date_raw,
+                "comments": item.comments,
             }
             for item in records
         ],
