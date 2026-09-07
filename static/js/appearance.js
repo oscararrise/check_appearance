@@ -9,6 +9,13 @@
     const employeeCard = document.getElementById('employee-card');
     const saveCheck = document.getElementById('save-check');
     const comment = document.getElementById('check-comment');
+    const historyFilterForm = document.getElementById('history-filter-form');
+    const scheduleDisplay = document.getElementById('schedule-display');
+    const scheduleForm = document.getElementById('schedule-form');
+    const scheduleEditButton = document.getElementById('schedule-edit-button');
+    const scheduleCancelButton = document.getElementById('schedule-cancel-button');
+    const scheduleSaveButton = document.getElementById('schedule-save-button');
+    const scheduleMessage = document.getElementById('schedule-message');
     let currentEmployee = null;
     let selectedStatus = null;
 
@@ -37,11 +44,23 @@
         message.className = `alert alert-${type}`;
     };
 
+    const showScheduleMessage = (text, type = 'success') => {
+        if (!scheduleMessage) return;
+        scheduleMessage.textContent = text;
+        scheduleMessage.className = `inline-message inline-message-${type}`;
+    };
+
     const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(v => v[0]).join('').toUpperCase();
     const firstInitial = (name) => String(name || '?').trim().charAt(0).toUpperCase() || '?';
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
     const statusClass = (value) => String(value || '').toLowerCase().replaceAll(' ', '_');
     const shiftClass = (value) => String(value || '').toLowerCase().replaceAll(' ', '_');
+    const statusCode = (value) => ({
+        'Ready': 'READY',
+        'Not Ready': 'NOT_READY',
+        'Declined': 'DECLINED',
+        'Registered': 'REGISTERED',
+    }[value] || String(value || '').toUpperCase());
 
     const renderTattoos = (tattoos) => {
         const summary = document.getElementById('tattoo-summary');
@@ -171,7 +190,24 @@
         renderApprovals(employee.appearance_approvals);
     };
 
+    const recordMatchesFilters = (record, isCheck) => {
+        if (!historyFilterForm) return true;
+        const formData = new FormData(historyFilterForm);
+        const dateFrom = String(formData.get('date_from') || '');
+        const dateTo = String(formData.get('date_to') || '');
+        const employeeId = String(formData.get('employee_id') || '').trim();
+        const status = String(formData.get('status') || '').toUpperCase();
+        const recordStatus = isCheck ? statusCode(record.status) : 'REGISTERED';
+
+        if (dateFrom && record.recorded_date < dateFrom) return false;
+        if (dateTo && record.recorded_date > dateTo) return false;
+        if (employeeId && !String(record.employee_id).includes(employeeId)) return false;
+        if (status && recordStatus !== status) return false;
+        return true;
+    };
+
     const prependHistory = (record, isCheck) => {
+        if (!recordMatchesFilters(record, isCheck)) return;
         const tableBody = document.getElementById('history-table-body');
         if (!tableBody) return;
 
@@ -186,12 +222,12 @@
             <td class="history-role">${escapeHtml(record.role || '—')}</td>
             <td><span class="shift-pill shift-${shiftClass(record.shift)}">${escapeHtml(record.shift || '—')}</span></td>
             <td><span class="status-pill status-${statusClass(status)}">${escapeHtml(status)}</span></td>
-            <td class="history-comment">${escapeHtml(comments)}</td>
+            <td class="history-comment"><span>${escapeHtml(comments)}</span></td>
             <td><span class="recorded-by">${escapeHtml(record.recorded_by || '—')}</span></td>
         `;
 
         tableBody.prepend(row);
-        while (tableBody.children.length > 100) tableBody.lastElementChild.remove();
+        while (tableBody.children.length > 500) tableBody.lastElementChild.remove();
     };
 
     const resetCheckSelection = () => {
@@ -200,6 +236,61 @@
         if (comment) comment.value = '';
         if (saveCheck) saveCheck.disabled = true;
     };
+
+    const setScheduleEditing = (editing) => {
+        if (!scheduleForm || !scheduleDisplay) return;
+        scheduleForm.classList.toggle('hidden', !editing);
+        scheduleDisplay.classList.toggle('hidden', editing);
+        scheduleEditButton?.classList.toggle('hidden', editing);
+        if (scheduleMessage) scheduleMessage.className = 'inline-message hidden';
+    };
+
+    const resetScheduleInputsFromDisplay = () => {
+        document.querySelectorAll('.schedule-editor-row').forEach((editorRow) => {
+            const shift = editorRow.dataset.shift;
+            const displayRow = document.querySelector(`[data-schedule-shift="${shift}"]`);
+            if (!displayRow) return;
+            editorRow.querySelector('.schedule-start-input').value = displayRow.querySelector('.schedule-start').textContent.trim();
+            editorRow.querySelector('.schedule-end-input').value = displayRow.querySelector('.schedule-end').textContent.trim();
+        });
+    };
+
+    scheduleEditButton?.addEventListener('click', () => setScheduleEditing(true));
+    scheduleCancelButton?.addEventListener('click', () => {
+        resetScheduleInputsFromDisplay();
+        setScheduleEditing(false);
+    });
+
+    scheduleForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const schedule = [...document.querySelectorAll('.schedule-editor-row')].map((row) => ({
+            shift: row.dataset.shift,
+            start_time: row.querySelector('.schedule-start-input').value,
+            end_time: row.querySelector('.schedule-end-input').value,
+        }));
+
+        scheduleSaveButton.disabled = true;
+        showScheduleMessage('Saving schedule…', 'info');
+        try {
+            const result = await postJson(shell.dataset.scheduleUrl, { schedule });
+            result.schedule.forEach((item) => {
+                const displayRow = document.querySelector(`[data-schedule-shift="${item.shift}"]`);
+                const editorRow = document.querySelector(`.schedule-editor-row[data-shift="${item.shift}"]`);
+                displayRow?.querySelector('.schedule-start')?.replaceChildren(item.start_time);
+                displayRow?.querySelector('.schedule-end')?.replaceChildren(item.end_time);
+                if (editorRow) {
+                    editorRow.querySelector('.schedule-start-input').value = item.start_time;
+                    editorRow.querySelector('.schedule-end-input').value = item.end_time;
+                }
+            });
+            showScheduleMessage('Schedule saved.', 'success');
+            window.setTimeout(() => setScheduleEditing(false), 650);
+        } catch (error) {
+            showScheduleMessage(error.message, 'error');
+        } finally {
+            scheduleSaveButton.disabled = false;
+        }
+    });
 
     scanForm.addEventListener('submit', async (event) => {
         event.preventDefault();
