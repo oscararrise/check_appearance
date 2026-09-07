@@ -1,14 +1,17 @@
 import json
+from datetime import datetime, time
 from io import BytesIO
 
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 from openpyxl import Workbook
 
-from .models import AppearanceCheck, PreparationScan
+from .models import AppearanceCheck, PreparationScan, ProcessSchedule
 from .services import (
     appearance_approval_payload,
     get_employee_profile,
@@ -17,34 +20,24 @@ from .services import (
 )
 
 
+SCHEDULE_DEFAULTS = {
+    "PREPARATION": {
+        "MORNING": (time(6, 0), time(8, 0)),
+        "AFTERNOON": (time(14, 0), time(16, 0)),
+        "NIGHT": (time(22, 0), time(0, 0)),
+    },
+    "CHECK": {
+        "MORNING": (time(6, 50), time(7, 30)),
+        "AFTERNOON": (time(14, 50), time(15, 30)),
+        "NIGHT": (time(22, 50), time(23, 30)),
+    },
+}
+SHIFT_ORDER = ("MORNING", "AFTERNOON", "NIGHT")
+
+
 @login_required
 def process_selection(request):
     return render(request, "appearance/process_selection.html")
-
-
-@login_required
-def workspace(request, process):
-    process = process.upper()
-    if process not in {"PREPARATION", "CHECK"}:
-        return JsonResponse({"error": "Invalid process."}, status=404)
-
-    if process == "PREPARATION":
-        records = PreparationScan.objects.select_related("recorded_by")
-        title = "Appearance Preparation"
-    else:
-        records = AppearanceCheck.objects.select_related("recorded_by")
-        title = "Appearance Check"
-
-    return render(
-        request,
-        "appearance/workspace.html",
-        {
-            "process": process,
-            "process_title": title,
-            "recent": records[:25],
-            "history": records[:100],
-        },
-    )
 
 
 def _json_body(request):
@@ -61,6 +54,107 @@ def _record_timestamp_payload(record):
         "recorded_at": local_time.strftime("%H:%M:%S"),
         "recorded_by": record.recorded_by.get_username(),
     }
+
+
+def _schedule_rows(process):
+    existing = {
+        row.shift: row
+        for row in ProcessSchedule.objects.filter(process=process).select_related("updated_by")
+    }
+    rows = []
+    for shift in SHIFT_ORDER:
+        row = existing.get(shift)
+        if row is None:
+            start_time, end_time = SCHEDULE_DEFAULTS[process][shift]
+            row, _ = ProcessSchedule.objects.get_or_create(
+                process=process,
+                shift=shift,
+                defaults={"start_time": start_time, "end_time": end_time},
+            )
+        rows.append(row)
+    return rows
+
+
+def _history_filters(request, process):
+    date_from_raw = request.GET.get("date_from", "").strip()
+    date_to_raw = request.GET.get("date_to", "").strip()
+    employee_id = request.GET.get("employee_id", "").strip()
+    status = request.GET.get("status", "").strip().upper()
+
+    date_from = parse_date(date_from_raw) if date_from_raw else None
+    date_to = parse_date(date_to_raw) if date_to_raw else None
+
+    if process == "CHECK":
+        allowed_statuses = {choice for choice, _ in AppearanceCheck.Status.choices}
+        if status not in allowed_statuses:
+            status = ""
+    elif status != "REGISTERED":
+        status = ""
+
+    return {
+        "date_from_raw": date_from_raw if date_from else "",
+        "date_to_raw": date_to_raw if date_to else "",
+        "date_from": date_from,
+        "date_to": date_to,
+        "employee_id": employee_id,
+        "status": status,
+    }
+
+
+def _apply_history_filters(records, process, filters):
+    if filters["date_from"]:
+        records = records.filter(recorded_at__date__gte=filters["date_from"])
+    if filters["date_to"]:
+        records = records.filter(recorded_at__date__lte=filters["date_to"])
+    if filters["employee_id"]:
+        records = records.filter(employee_id__icontains=filters["employee_id"])
+    if process == "CHECK" and filters["status"]:
+        records = records.filter(status=filters["status"])
+    return records
+
+
+@login_required
+def workspace(request, process):
+    process = process.upper()
+    if process not in {"PREPARATION", "CHECK"}:
+        return JsonResponse({"error": "Invalid process."}, status=404)
+
+    if process == "PREPARATION":
+        records = PreparationScan.objects.select_related("recorded_by")
+        title = "Appearance Preparation"
+        status_options = [("REGISTERED", "Registered")]
+    else:
+        records = AppearanceCheck.objects.select_related("recorded_by")
+        title = "Appearance Check"
+        status_options = list(AppearanceCheck.Status.choices)
+
+    filters = _history_filters(request, process)
+    filtered_records = _apply_history_filters(records, process, filters)
+    matched_count = filtered_records.count()
+    history = filtered_records[:500]
+
+    return render(
+        request,
+        "appearance/workspace.html",
+        {
+            "process": process,
+            "process_title": title,
+            "history": history,
+            "history_count": matched_count,
+            "history_loaded_count": len(history),
+            "history_filters": filters,
+            "history_has_filters": any(
+                [
+                    filters["date_from"],
+                    filters["date_to"],
+                    filters["employee_id"],
+                    filters["status"],
+                ]
+            ),
+            "status_options": status_options,
+            "schedule_rows": _schedule_rows(process),
+        },
+    )
 
 
 @login_required
@@ -153,6 +247,69 @@ def record_check(request):
         **_record_timestamp_payload(record),
     }
     return JsonResponse({"ok": True, "record": record_payload})
+
+
+def _parse_clock(value):
+    try:
+        return datetime.strptime(str(value), "%H:%M").time()
+    except (TypeError, ValueError):
+        return None
+
+
+@login_required
+@require_POST
+def update_schedule(request, process):
+    process = process.upper()
+    if process not in SCHEDULE_DEFAULTS:
+        return JsonResponse({"ok": False, "error": "Invalid process."}, status=404)
+    if not request.user.is_staff:
+        return JsonResponse({"ok": False, "error": "Only administrators can update the operating schedule."}, status=403)
+
+    payload = _json_body(request)
+    schedule = payload.get("schedule")
+    if not isinstance(schedule, list):
+        return JsonResponse({"ok": False, "error": "Schedule data is required."}, status=400)
+
+    normalized = {}
+    for item in schedule:
+        shift = str(item.get("shift", "")).upper()
+        start_time = _parse_clock(item.get("start_time"))
+        end_time = _parse_clock(item.get("end_time"))
+        if shift not in SHIFT_ORDER or start_time is None or end_time is None:
+            return JsonResponse({"ok": False, "error": "Each shift requires a valid start and end time."}, status=400)
+        normalized[shift] = (start_time, end_time)
+
+    if set(normalized) != set(SHIFT_ORDER):
+        return JsonResponse({"ok": False, "error": "Morning, Afternoon and Night schedules are required."}, status=400)
+
+    with transaction.atomic():
+        for shift in SHIFT_ORDER:
+            start_time, end_time = normalized[shift]
+            ProcessSchedule.objects.update_or_create(
+                process=process,
+                shift=shift,
+                defaults={
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "updated_by": request.user,
+                },
+            )
+
+    rows = _schedule_rows(process)
+    return JsonResponse(
+        {
+            "ok": True,
+            "schedule": [
+                {
+                    "shift": row.shift,
+                    "shift_label": row.get_shift_display(),
+                    "start_time": row.start_time.strftime("%H:%M"),
+                    "end_time": row.end_time.strftime("%H:%M"),
+                }
+                for row in rows
+            ],
+        }
+    )
 
 
 @login_required
