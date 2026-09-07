@@ -18,6 +18,7 @@
     const scheduleMessage = document.getElementById('schedule-message');
     let currentEmployee = null;
     let selectedStatus = null;
+    let saveToastTimer = null;
 
     const csrfToken = () => {
         const name = 'csrftoken=';
@@ -61,6 +62,81 @@
         'Declined': 'DECLINED',
         'Registered': 'REGISTERED',
     }[value] || String(value || '').toUpperCase());
+
+    const ensureLatestRecordPanel = () => {
+        let panel = document.getElementById('latest-record-panel');
+        if (panel) return panel;
+
+        panel = document.createElement('section');
+        panel.id = 'latest-record-panel';
+        panel.className = 'latest-record-panel';
+        panel.innerHTML = `
+            <div class="latest-record-heading">
+                <div>
+                    <p class="eyebrow">LAST PROCESS RECORD</p>
+                    <h3>Most recent activity for this employee</h3>
+                </div>
+                <span id="latest-record-status" class="status-pill status-registered">No record</span>
+            </div>
+            <div id="latest-record-content" class="latest-record-content"></div>
+        `;
+        employeeCard.querySelector('.employee-head')?.insertAdjacentElement('afterend', panel);
+        return panel;
+    };
+
+    const renderLatestRecord = (record) => {
+        const panel = ensureLatestRecordPanel();
+        const status = panel.querySelector('#latest-record-status');
+        const content = panel.querySelector('#latest-record-content');
+
+        if (!record) {
+            status.className = 'status-pill status-neutral';
+            status.textContent = 'No record';
+            content.innerHTML = `
+                <div class="latest-record-empty">
+                    <span class="latest-record-empty-icon">○</span>
+                    <div><strong>No previous record in this process</strong><small>This employee has no earlier ${process === 'CHECK' ? 'Appearance Check' : 'Appearance Preparation'} record.</small></div>
+                </div>
+            `;
+            return;
+        }
+
+        status.className = `status-pill status-${statusClass(record.status)}`;
+        status.textContent = record.status || 'Registered';
+        const commentHtml = record.comment
+            ? `<div class="latest-record-comment"><span>Comment</span><p>${escapeHtml(record.comment)}</p></div>`
+            : '';
+
+        content.innerHTML = `
+            <div class="latest-record-facts">
+                <div><span>Date</span><strong>${escapeHtml(record.recorded_date || '—')}</strong></div>
+                <div><span>Time</span><strong>${escapeHtml(record.recorded_at || '—')}</strong></div>
+                <div><span>Shift</span><strong>${escapeHtml(record.shift || '—')}</strong></div>
+                <div><span>Recorded by</span><strong>${escapeHtml(record.recorded_by || '—')}</strong></div>
+            </div>
+            ${commentHtml}
+        `;
+    };
+
+    const showRecordSavedToast = (record) => {
+        let toast = document.getElementById('record-saved-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'record-saved-toast';
+            toast.className = 'record-saved-toast';
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toast);
+        }
+
+        toast.innerHTML = `
+            <span class="record-saved-icon" aria-hidden="true">✓</span>
+            <div><strong>Record saved</strong><small>${escapeHtml(record.employee_name || record.employee_id || 'Employee')} · ${escapeHtml(record.status || 'Registered')}</small></div>
+        `;
+        toast.classList.add('visible');
+        window.clearTimeout(saveToastTimer);
+        saveToastTimer = window.setTimeout(() => toast.classList.remove('visible'), 3200);
+    };
 
     const renderTattoos = (tattoos) => {
         const summary = document.getElementById('tattoo-summary');
@@ -185,6 +261,7 @@
         document.getElementById('employee-name').textContent = employee.full_name;
         document.getElementById('employee-id').textContent = employee.employee_id;
         document.getElementById('employee-role').textContent = employee.role;
+        renderLatestRecord(employee.latest_process_record);
         renderMedicalRestrictions(employee.appearance_approvals?.medical_restrictions);
         renderTattoos(employee.tattoos);
         renderApprovals(employee.appearance_approvals);
@@ -303,14 +380,16 @@
 
         showMessage('Searching HiBob and Appearance data…', 'info');
         try {
-            const result = await postJson(shell.dataset.lookupUrl, { employee_id: employeeId });
+            const result = await postJson(shell.dataset.lookupUrl, { employee_id: employeeId, process });
             renderEmployee(result.employee);
             resetCheckSelection();
 
             if (process === 'PREPARATION') {
                 const saved = await postJson(shell.dataset.preparationUrl, { employee_id: result.employee.employee_id });
                 prependHistory(saved.record, false);
-                showMessage(`${result.employee.full_name} was registered for Appearance Preparation.`, 'success');
+                renderLatestRecord(saved.record);
+                showRecordSavedToast(saved.record);
+                showMessage('Record saved. Appearance Preparation registration completed.', 'success');
             } else {
                 showMessage(`${result.employee.full_name} loaded. Select an Appearance status.`, 'success');
             }
@@ -343,7 +422,9 @@
                 comment: comment.value.trim(),
             });
             prependHistory(saved.record, true);
-            showMessage(`${currentEmployee.full_name} was saved as ${saved.record.status}.`, 'success');
+            renderLatestRecord(saved.record);
+            showRecordSavedToast(saved.record);
+            showMessage(`Record saved. ${currentEmployee.full_name} is ${saved.record.status}.`, 'success');
             resetCheckSelection();
             input.focus();
         } catch (error) {
