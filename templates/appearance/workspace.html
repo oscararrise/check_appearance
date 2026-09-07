@@ -105,6 +105,62 @@
             </article>
         </aside>
     </main>
+
+    <section class="history-shell">
+        <article class="card history-card">
+            <div class="section-heading history-heading">
+                <div>
+                    <p class="eyebrow">PROCESS HISTORY</p>
+                    <h2>Latest activity</h2>
+                    <p class="helper">Showing the latest 100 records for this process.</p>
+                </div>
+                <a class="btn btn-primary" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+            </div>
+
+            <div class="history-table-wrap">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date & time</th>
+                            <th>Employee ID</th>
+                            <th>Employee</th>
+                            <th>Role</th>
+                            <th>Shift</th>
+                            <th>Status</th>
+                            <th>Comments</th>
+                            <th>Recorded by</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                        {% for item in history %}
+                        <tr>
+                            <td class="history-datetime">{{ item.recorded_at|date:"Y-m-d H:i:s" }}</td>
+                            <td><strong>{{ item.employee_id }}</strong></td>
+                            <td>{{ item.employee_name }}</td>
+                            <td>{{ item.role|default:"—" }}</td>
+                            <td>{{ item.get_shift_display }}</td>
+                            <td>
+                                {% if process == "CHECK" %}
+                                <span class="status-pill status-{{ item.status|lower }}">{{ item.get_status_display }}</span>
+                                {% else %}
+                                <span class="status-pill status-registered">Registered</span>
+                                {% endif %}
+                            </td>
+                            <td class="history-comment">
+                                {% if process == "CHECK" %}{{ item.comment|default:"—" }}{% else %}—{% endif %}
+                            </td>
+                            <td>{{ item.recorded_by.get_username }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr id="empty-history">
+                            <td colspan="8" class="history-empty">No process history yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
 </div>
 <script src="{% static 'js/appearance.js' %}"></script>
 {% endblock %}
