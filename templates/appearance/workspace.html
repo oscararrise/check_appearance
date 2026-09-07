@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ process_title }} | ARRISE Appearance{% endblock %}
+{% block body %}
+<div class="workspace-shell" data-process="{{ process }}"
+     data-lookup-url="{% url 'appearance:lookup_employee' %}"
+     data-preparation-url="{% url 'appearance:record_preparation' %}"
+     data-check-url="{% url 'appearance:record_check' %}">
+    <header class="topbar compact">
+        <div>
+            <a class="back-link" href="{% url 'appearance:process_selection' %}">← Processes</a>
+            <h1>{{ process_title }}</h1>
+        </div>
+        <div class="topbar-actions">
+            <span class="user-chip">{{ request.user.username }}</span>
+            <a class="btn btn-light" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+        </div>
+    </header>
+
+    <main class="tablet-layout">
+        <section class="main-column">
+            <article class="card scanner-card">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">EMPLOYEE LOOKUP</p>
+                        <h2>Scan or enter Employee ID</h2>
+                    </div>
+                    <span class="mode-badge">Scanner + manual entry</span>
+                </div>
+                <form id="scan-form" class="scan-row">
+                    {% csrf_token %}
+                    <input id="employee-id-input" class="scan-input" inputmode="numeric" autocomplete="off" placeholder="Employee ID" aria-label="Employee ID">
+                    <button class="btn btn-primary btn-large" type="submit">Search</button>
+                </form>
+                <p class="helper">A USB scanner can type the ID into this field and press Enter. If no reader is available, type the Employee ID manually and press Enter.</p>
+                <div id="message" class="alert hidden" role="status"></div>
+            </article>
+
+            <article id="employee-card" class="card employee-card hidden">
+                <div class="employee-head">
+                    <div class="avatar" id="employee-initials">--</div>
+                    <div>
+                        <p class="eyebrow">EMPLOYEE</p>
+                        <h2 id="employee-name">Employee</h2>
+                        <div class="employee-meta"><span id="employee-id"></span><span>•</span><span id="employee-role"></span></div>
+                    </div>
+                </div>
+
+                <div id="tattoo-summary" class="tattoo-summary"></div>
+                <div id="tattoo-records" class="tattoo-records"></div>
+
+                {% if process == "CHECK" %}
+                <section class="check-panel">
+                    <p class="eyebrow">APPEARANCE STATUS</p>
+                    <div class="status-grid" role="group" aria-label="Appearance status">
+                        <button type="button" class="status-btn ready" data-status="READY">Ready</button>
+                        <button type="button" class="status-btn warning" data-status="NOT_READY">Not Ready</button>
+                        <button type="button" class="status-btn declined" data-status="DECLINED">Declined</button>
+                    </div>
+                    <label class="field">
+                        <span>Comment</span>
+                        <textarea id="check-comment" rows="3" maxlength="500" placeholder="Short operational note"></textarea>
+                    </label>
+                    <button id="save-check" type="button" class="btn btn-primary btn-large btn-full" disabled>Save Appearance Check</button>
+                </section>
+                {% endif %}
+            </article>
+        </section>
+
+        <aside class="side-column">
+            <article class="card schedule-card">
+                <p class="eyebrow">OFFICIAL WINDOWS</p>
+                {% if process == "PREPARATION" %}
+                <div class="schedule-line"><strong>Morning</strong><span>6:00 AM – 8:00 AM</span></div>
+                <div class="schedule-line"><strong>Afternoon</strong><span>2:00 PM – 4:00 PM</span></div>
+                <div class="schedule-line"><strong>Night</strong><span>10:00 PM – 12:00 AM</span></div>
+                {% else %}
+                <div class="schedule-line"><strong>Morning</strong><span>6:50 AM – 7:30 AM</span></div>
+                <div class="schedule-line"><strong>Afternoon</strong><span>2:50 PM – 3:30 PM</span></div>
+                <div class="schedule-line"><strong>Night</strong><span>10:50 PM – 11:30 PM</span></div>
+                {% endif %}
+            </article>
+
+            <article class="card recent-card">
+                <div class="section-heading small"><div><p class="eyebrow">LIVE LOG</p><h2>Recent activity</h2></div></div>
+                <div id="recent-list" class="recent-list">
+                    {% for item in recent %}
+                    <div class="recent-item">
+                        <div><strong>{{ item.employee_name }}</strong><span>{{ item.employee_id }} · {{ item.recorded_at|date:"H:i:s" }}</span></div>
+                        {% if process == "CHECK" %}<span class="status-pill status-{{ item.status|lower }}">{{ item.get_status_display }}</span>{% endif %}
+                    </div>
+                    {% empty %}
+                    <p id="empty-log" class="muted">No records yet.</p>
+                    {% endfor %}
+                </div>
+            </article>
+        </aside>
+    </main>
+</div>
+<script src="{% static 'js/appearance.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign in | ARRISE Appearance{% endblock %}
+{% block body %}
+<main class="auth-shell">
+    <section class="login-panel">
+        <div class="brand-mark">A</div>
+        <p class="eyebrow">ARRISE APPEARANCE</p>
+        <h1>Sign in</h1>
+        <p class="muted">Use the account created for you by an administrator.</p>
+        {% if form.errors %}<div class="alert alert-error">Invalid credentials. Please try again.</div>{% endif %}
+        <form method="post" class="stack-lg">
+            {% csrf_token %}
+            <label class="field">
+                <span>Corporate email</span>
+                <input type="text" name="username" autocomplete="username" autofocus required placeholder="name@arrise.com">
+            </label>
+            <label class="field">
+                <span>Password</span>
+                <input type="password" name="password" autocomplete="current-password" required>
+            </label>
+            <button type="submit" class="btn btn-primary btn-large">Sign in</button>
+        </form>
+    </section>
+</main>
+{% endblock %}

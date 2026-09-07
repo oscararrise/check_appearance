@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Select process | ARRISE Appearance{% endblock %}
+{% block body %}
+<div class="app-shell">
+    <header class="topbar">
+        <div>
+            <p class="eyebrow light">ARRISE APPEARANCE</p>
+            <h1>Select a process</h1>
+        </div>
+        <div class="topbar-actions">
+            <span class="user-chip">{{ request.user.username }}</span>
+            {% if request.user.is_staff %}<a class="btn btn-light" href="/admin/">Admin</a>{% endif %}
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-light" type="submit">Sign out</button></form>
+        </div>
+    </header>
+
+    <main class="selection-grid">
+        <a class="process-card" href="{% url 'appearance:workspace' 'PREPARATION' %}">
+            <span class="process-kicker">01</span>
+            <h2>Appearance Preparation</h2>
+            <p>Register arrival to the Makeup area and immediately review employee and tattoo information.</p>
+            <span class="process-link">Open Preparation →</span>
+        </a>
+        <a class="process-card" href="{% url 'appearance:workspace' 'CHECK' %}">
+            <span class="process-kicker">02</span>
+            <h2>Appearance Check</h2>
+            <p>Review the employee, select Ready, Not Ready or Declined, and save an operational comment.</p>
+            <span class="process-link">Open Check →</span>
+        </a>
+    </main>
+</div>
+{% endblock %}
