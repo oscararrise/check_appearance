@@ -12,7 +12,10 @@
         </div>
         <div class="topbar-actions">
             <span class="user-chip"><span class="user-dot" aria-hidden="true"></span>{{ request.user.username }}</span>
-            {% if request.user.is_staff %}<a class="btn btn-ghost" href="/admin/">Admin</a>{% endif %}
+            {% if request.user.is_staff %}
+            <a class="btn btn-ghost" href="{% url 'appearance:schedule_settings' %}">Schedule settings</a>
+            <a class="btn btn-ghost" href="/admin/">Admin</a>
+            {% endif %}
             <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-ghost" type="submit">Sign out</button></form>
         </div>
     </header>
@@ -44,9 +47,9 @@
                     <p>Register arrival to Makeup and immediately review employee, tattoo and approval information.</p>
                 </div>
                 <div class="process-window-list">
-                    <span><strong>Morning</strong> 6:00–8:00</span>
-                    <span><strong>Afternoon</strong> 14:00–16:00</span>
-                    <span><strong>Night</strong> 22:00–00:00</span>
+                    {% for row in preparation_schedule %}
+                    <span><strong>{{ row.get_shift_display }}</strong> {{ row.start_time|time:"H:i" }}–{{ row.end_time|time:"H:i" }}</span>
+                    {% endfor %}
                 </div>
                 <span class="process-cta">
                     <span class="process-cta-copy"><small>GO TO PROCESS</small><strong>Open Preparation</strong></span>
@@ -67,9 +70,9 @@
                     <p>Review the employee, choose Ready, Not Ready or Declined, and save an operational comment.</p>
                 </div>
                 <div class="process-window-list">
-                    <span><strong>Morning</strong> 6:50–7:30</span>
-                    <span><strong>Afternoon</strong> 14:50–15:30</span>
-                    <span><strong>Night</strong> 22:50–23:30</span>
+                    {% for row in check_schedule %}
+                    <span><strong>{{ row.get_shift_display }}</strong> {{ row.start_time|time:"H:i" }}–{{ row.end_time|time:"H:i" }}</span>
+                    {% endfor %}
                 </div>
                 <span class="process-cta">
                     <span class="process-cta-copy"><small>GO TO PROCESS</small><strong>Open Check</strong></span>
