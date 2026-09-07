@@ -38,8 +38,10 @@
     };
 
     const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(v => v[0]).join('').toUpperCase();
+    const firstInitial = (name) => String(name || '?').trim().charAt(0).toUpperCase() || '?';
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
     const statusClass = (value) => String(value || '').toLowerCase().replaceAll(' ', '_');
+    const shiftClass = (value) => String(value || '').toLowerCase().replaceAll(' ', '_');
 
     const renderTattoos = (tattoos) => {
         const summary = document.getElementById('tattoo-summary');
@@ -119,7 +121,6 @@
         document.getElementById('employee-name').textContent = employee.full_name;
         document.getElementById('employee-id').textContent = employee.employee_id;
         document.getElementById('employee-role').textContent = employee.role;
-
         renderTattoos(employee.tattoos);
         renderApprovals(employee.appearance_approvals);
     };
@@ -130,7 +131,11 @@
         const item = document.createElement('div');
         item.className = 'recent-item';
         const status = isCheck ? `<span class="status-pill status-${statusClass(record.status)}">${escapeHtml(record.status)}</span>` : '';
-        item.innerHTML = `<div><strong>${escapeHtml(record.employee_name)}</strong><span>${escapeHtml(record.employee_id)} · ${escapeHtml(record.recorded_at)}</span></div>${status}`;
+        item.innerHTML = `
+            <div class="recent-avatar">${escapeHtml(firstInitial(record.employee_name))}</div>
+            <div class="recent-copy"><strong>${escapeHtml(record.employee_name)}</strong><span>${escapeHtml(record.employee_id)} · ${escapeHtml(record.recorded_at)}</span></div>
+            ${status}
+        `;
         list.prepend(item);
         while (list.children.length > 25) list.lastElementChild.remove();
     };
@@ -145,14 +150,13 @@
         const comments = isCheck && record.comment ? record.comment : '—';
 
         row.innerHTML = `
-            <td class="history-datetime">${escapeHtml(record.recorded_date)} ${escapeHtml(record.recorded_at)}</td>
-            <td><strong>${escapeHtml(record.employee_id)}</strong></td>
-            <td>${escapeHtml(record.employee_name)}</td>
-            <td>${escapeHtml(record.role || '—')}</td>
-            <td>${escapeHtml(record.shift || '—')}</td>
+            <td class="history-datetime"><strong>${escapeHtml(record.recorded_date)}</strong><span>${escapeHtml(record.recorded_at)}</span></td>
+            <td><div class="history-employee"><span class="table-avatar">${escapeHtml(firstInitial(record.employee_name))}</span><div><strong>${escapeHtml(record.employee_name)}</strong><span class="employee-id-inline">ID ${escapeHtml(record.employee_id)}</span></div></div></td>
+            <td class="history-role">${escapeHtml(record.role || '—')}</td>
+            <td><span class="shift-pill shift-${shiftClass(record.shift)}">${escapeHtml(record.shift || '—')}</span></td>
             <td><span class="status-pill status-${statusClass(status)}">${escapeHtml(status)}</span></td>
             <td class="history-comment">${escapeHtml(comments)}</td>
-            <td>${escapeHtml(record.recorded_by || '—')}</td>
+            <td><span class="recorded-by">${escapeHtml(record.recorded_by || '—')}</span></td>
         `;
 
         tableBody.prepend(row);
