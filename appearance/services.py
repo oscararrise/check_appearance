@@ -107,7 +107,6 @@ def _approval_record_payload(item):
         "medical_condition": item.get_medical_condition_display(),
         "paperwork_submitted": item.get_paperwork_submitted_display(),
         "test_initial_date": item.test_initial_date.isoformat() if item.test_initial_date else item.test_initial_date_raw,
-        "test_final_date": item.test_final_date.isoformat() if item.test_final_date else item.test_final_date_raw,
         "comments": item.comments,
     }
 
