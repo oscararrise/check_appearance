@@ -2,24 +2,62 @@
 {% block title %}Sign in | ARRISE Appearance{% endblock %}
 {% block body %}
 <main class="auth-shell">
-    <section class="login-panel">
-        <div class="brand-mark">A</div>
-        <p class="eyebrow">ARRISE APPEARANCE</p>
-        <h1>Sign in</h1>
-        <p class="muted">Use the account created for you by an administrator.</p>
-        {% if form.errors %}<div class="alert alert-error">Invalid credentials. Please try again.</div>{% endif %}
-        <form method="post" class="stack-lg">
-            {% csrf_token %}
-            <label class="field">
-                <span>Corporate email</span>
-                <input type="text" name="username" autocomplete="username" autofocus required placeholder="name@arrise.com">
-            </label>
-            <label class="field">
-                <span>Password</span>
-                <input type="password" name="password" autocomplete="current-password" required>
-            </label>
-            <button type="submit" class="btn btn-primary btn-large">Sign in</button>
-        </form>
-    </section>
+    <div class="auth-layout">
+        <section class="auth-brand-panel" aria-label="ARRISE Appearance">
+            <div class="brand-lockup brand-lockup-light">
+                <span class="brand-symbol" aria-hidden="true">A</span>
+                <div>
+                    <strong>ARRISE</strong>
+                    <span>Appearance Operations</span>
+                </div>
+            </div>
+
+            <div class="auth-brand-copy">
+                <p class="eyebrow light">OPERATIONS PLATFORM</p>
+                <h1>Fast checks.<br>Clear decisions.</h1>
+                <p>A focused workspace for preparation, appearance validation and auditable operational records.</p>
+            </div>
+
+            <div class="auth-feature-list" aria-label="Platform benefits">
+                <div class="auth-feature"><span>01</span><p><strong>Scan-first workflow</strong><small>Designed for tablets and USB ID scanners.</small></p></div>
+                <div class="auth-feature"><span>02</span><p><strong>Single employee view</strong><small>HiBob, tattoos and appearance approvals together.</small></p></div>
+                <div class="auth-feature"><span>03</span><p><strong>Traceable history</strong><small>Every operational action remains available for review.</small></p></div>
+            </div>
+        </section>
+
+        <section class="login-panel">
+            <div class="login-mobile-brand">
+                <span class="brand-symbol" aria-hidden="true">A</span>
+                <strong>ARRISE Appearance</strong>
+            </div>
+            <p class="eyebrow">WELCOME BACK</p>
+            <h2>Sign in to continue</h2>
+            <p class="muted login-intro">Use the corporate account assigned by an administrator.</p>
+
+            {% if form.errors %}
+            <div class="alert alert-error" role="alert">
+                <span class="alert-icon" aria-hidden="true">!</span>
+                <span>Invalid credentials. Please try again.</span>
+            </div>
+            {% endif %}
+
+            <form method="post" class="stack-lg">
+                {% csrf_token %}
+                <label class="field">
+                    <span>Corporate email</span>
+                    <input type="text" name="username" autocomplete="username" autofocus required placeholder="name@arrise.com">
+                </label>
+                <label class="field">
+                    <span>Password</span>
+                    <input type="password" name="password" autocomplete="current-password" required placeholder="Enter your password">
+                </label>
+                <button type="submit" class="btn btn-primary btn-large btn-full">
+                    <span>Sign in</span><span aria-hidden="true">→</span>
+                </button>
+            </form>
+
+            <p class="login-footnote">Access is restricted to authorized ARRISE team members.</p>
+        </section>
+    </div>
 </main>
 {% endblock %}
