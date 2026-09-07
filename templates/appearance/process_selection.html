@@ -21,8 +21,8 @@
         <section class="selection-intro">
             <div>
                 <p class="eyebrow">WORKFLOW</p>
-                <h1>What do you need to do?</h1>
-                <p class="selection-subtitle">Choose the operation. Each workflow is optimized for fast scanning, clear employee context and minimal taps.</p>
+                <h1>Choose your process</h1>
+                <p class="selection-subtitle">Two clear workflows. Pick one and start scanning immediately.</p>
             </div>
             <div class="selection-tip">
                 <span class="tip-icon" aria-hidden="true">⌁</span>
@@ -31,7 +31,7 @@
         </section>
 
         <section class="selection-grid">
-            <a class="process-card preparation" href="{% url 'appearance:workspace' 'PREPARATION' %}">
+            <a class="process-card preparation" href="{% url 'appearance:workspace' 'PREPARATION' %}" aria-label="Open Appearance Preparation">
                 <div class="process-card-top">
                     <span class="process-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg>
@@ -48,10 +48,13 @@
                     <span><strong>Afternoon</strong> 14:00–16:00</span>
                     <span><strong>Night</strong> 22:00–00:00</span>
                 </div>
-                <span class="process-link">Start preparation <b aria-hidden="true">→</b></span>
+                <span class="process-cta">
+                    <span class="process-cta-copy"><small>GO TO PROCESS</small><strong>Open Preparation</strong></span>
+                    <span class="process-cta-arrow" aria-hidden="true">→</span>
+                </span>
             </a>
 
-            <a class="process-card check" href="{% url 'appearance:workspace' 'CHECK' %}">
+            <a class="process-card check" href="{% url 'appearance:workspace' 'CHECK' %}" aria-label="Open Appearance Check">
                 <div class="process-card-top">
                     <span class="process-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 12 3 3 7-7"/><circle cx="12" cy="12" r="9"/></svg>
@@ -68,7 +71,10 @@
                     <span><strong>Afternoon</strong> 14:50–15:30</span>
                     <span><strong>Night</strong> 22:50–23:30</span>
                 </div>
-                <span class="process-link">Start appearance check <b aria-hidden="true">→</b></span>
+                <span class="process-cta">
+                    <span class="process-cta-copy"><small>GO TO PROCESS</small><strong>Open Check</strong></span>
+                    <span class="process-cta-arrow" aria-hidden="true">→</span>
+                </span>
             </a>
         </section>
     </main>
