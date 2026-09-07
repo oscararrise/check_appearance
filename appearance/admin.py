@@ -8,6 +8,7 @@ from .models import (
     ImportBatch,
     ImportIssue,
     PreparationScan,
+    ProcessSchedule,
     TattooRecord,
 )
 
@@ -84,6 +85,17 @@ class AppearanceApprovalRecordAdmin(admin.ModelAdmin):
     search_fields = ("employee_id", "source_name", "responsible", "situation", "comments")
     readonly_fields = ("created_at", "updated_at")
     exclude = ("test_final_date", "test_final_date_raw")
+
+
+@admin.register(ProcessSchedule)
+class ProcessScheduleAdmin(admin.ModelAdmin):
+    list_display = ("process", "shift", "start_time", "end_time", "updated_by", "updated_at")
+    list_filter = ("process", "shift")
+    readonly_fields = ("updated_by", "updated_at")
+
+    def save_model(self, request, obj, form, change):
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 class ImportIssueInline(admin.TabularInline):
