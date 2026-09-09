@@ -1,0 +1,297 @@
+/* Apple-inspired typography and interaction polish for ARRISE Appearance.
+   Uses native/system fonts only; no external font dependency. */
+
+:root {
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    --tracking-tight: -0.035em;
+    --tracking-heading: -0.022em;
+    --tracking-body: -0.008em;
+}
+
+html {
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+    font-family: var(--font-sans);
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    letter-spacing: var(--tracking-body);
+}
+
+body {
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4,
+.process-card h2,
+.workspace-title-line h1,
+.section-heading h2,
+.employee-card h2,
+.history-card h2,
+.side-card-heading h2,
+.login-panel h2 {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    font-weight: 760;
+    letter-spacing: var(--tracking-heading);
+    text-wrap: balance;
+}
+
+.workspace-title-line h1,
+.selection-intro h1,
+.auth-brand-copy h1 {
+    font-weight: 790;
+    letter-spacing: var(--tracking-tight);
+}
+
+.workspace-title-line h1 {
+    font-size: clamp(34px, 4vw, 52px);
+    line-height: 1.02;
+}
+
+.selection-intro h1 {
+    font-size: clamp(38px, 4.5vw, 56px);
+    line-height: 1.02;
+}
+
+.process-card h2 {
+    font-size: clamp(28px, 2.6vw, 36px);
+    line-height: 1.08;
+    font-weight: 770;
+}
+
+.section-heading h2,
+.side-card-heading h2,
+.history-card h2 {
+    font-size: 22px;
+    line-height: 1.15;
+    font-weight: 740;
+}
+
+.data-panel h3,
+.check-panel h3 {
+    margin: 1px 0 0;
+    font-size: 17px;
+    line-height: 1.2;
+    font-weight: 720;
+    letter-spacing: -0.018em;
+}
+
+p,
+.selection-subtitle,
+.workspace-subtitle,
+.side-card-copy,
+.helper,
+.field,
+.history-table,
+.schedule-line,
+.approval-item,
+.tattoo-item,
+.medical-item {
+    letter-spacing: -0.006em;
+}
+
+.selection-subtitle,
+.workspace-subtitle {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+}
+
+.eyebrow {
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 780;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.brand-lockup strong {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .10em;
+}
+
+.brand-lockup span:not(.brand-symbol) {
+    font-size: 11px;
+    letter-spacing: .015em;
+}
+
+.btn,
+.status-btn,
+.process-cta,
+.user-chip,
+.mode-badge,
+.process-chip,
+.required-chip,
+.status-pill,
+.shift-pill,
+.history-count,
+.profile-source {
+    font-weight: 680;
+}
+
+.btn {
+    letter-spacing: -0.012em;
+}
+
+.btn-large,
+.action-button {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.process-cta-copy small {
+    font-size: 9px;
+    font-weight: 760;
+    letter-spacing: .12em;
+}
+
+.process-cta-copy strong {
+    font-size: 16px;
+    font-weight: 720;
+    letter-spacing: -0.015em;
+}
+
+.status-btn strong {
+    font-size: 15px;
+    font-weight: 740;
+    letter-spacing: -0.018em;
+}
+
+.status-btn small {
+    font-size: 11px;
+    font-weight: 540;
+    letter-spacing: -0.004em;
+}
+
+.scan-input {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+input[type="date"],
+input[type="time"],
+.employee-id-badge,
+.history-datetime,
+.schedule-line time,
+.employee-id-inline {
+    font-variant-numeric: tabular-nums;
+}
+
+.history-table {
+    font-size: 12.5px;
+}
+
+.history-table thead th {
+    font-size: 9.5px;
+    font-weight: 760;
+    letter-spacing: .075em;
+    color: #716a7b;
+}
+
+.history-table td strong,
+.history-employee strong {
+    font-weight: 680;
+    letter-spacing: -0.012em;
+}
+
+.history-datetime strong {
+    font-weight: 680;
+}
+
+.history-datetime span,
+.employee-id-inline,
+.recorded-by,
+.history-role,
+.history-comment,
+.schedule-line small,
+.side-card-copy,
+.helper {
+    color: var(--color-text-secondary);
+}
+
+.approval-item-head strong,
+.medical-item-head strong,
+.tattoo-item > strong {
+    font-weight: 710;
+    letter-spacing: -0.014em;
+}
+
+.alert,
+.inline-message,
+.record-toast {
+    font-weight: 620;
+    letter-spacing: -0.008em;
+}
+
+/* Reduce visual noise in secondary text while preserving hierarchy. */
+.process-card p,
+.data-panel p,
+.medical-comment,
+.approval-item p,
+.tattoo-item p {
+    line-height: 1.48;
+}
+
+/* Slightly calmer buttons and controls: crisp rather than heavy. */
+.btn,
+.status-btn,
+.filter-field input,
+.filter-field select,
+.schedule-editor-row input[type="time"] {
+    box-shadow: none;
+}
+
+.btn-primary,
+.action-button {
+    box-shadow: 0 8px 22px rgba(53,16,106,.16);
+}
+
+.btn-primary:hover,
+.action-button:hover {
+    box-shadow: 0 12px 28px rgba(53,16,106,.20);
+}
+
+/* More deliberate whitespace around the core reading surfaces. */
+.employee-head {
+    padding-bottom: 22px;
+}
+
+.employee-data-grid-premium {
+    gap: 16px;
+}
+
+.employee-data-grid-premium .data-panel {
+    padding: 20px;
+}
+
+.history-filter-form {
+    padding: 16px;
+}
+
+/* Mobile typography tuning. */
+@media (max-width: 680px) {
+    body { font-size: 14px; }
+    .workspace-title-line h1 { font-size: 32px; }
+    .selection-intro h1 { font-size: 36px; }
+    .process-card h2 { font-size: 29px; }
+    .section-heading h2,
+    .side-card-heading h2,
+    .history-card h2 { font-size: 20px; }
+    .scan-input { font-size: 20px; }
+}
