@@ -238,3 +238,34 @@ class AppearanceCheck(OperationalRecord):
 
     def __str__(self):
         return f"{self.employee_id} - {self.status} - {self.recorded_at:%Y-%m-%d %H:%M}"
+
+
+class PowerAutomateDelivery(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        SENT = "SENT", "Sent"
+        FAILED = "FAILED", "Failed"
+        DISABLED = "DISABLED", "Integration disabled"
+
+    appearance_check = models.OneToOneField(
+        AppearanceCheck,
+        on_delete=models.CASCADE,
+        related_name="power_automate_delivery",
+    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
+    payload = models.JSONField(default=dict)
+    attempts = models.PositiveIntegerField(default=0)
+    response_status = models.PositiveIntegerField(blank=True, null=True)
+    last_error = models.TextField(blank=True)
+    last_attempt_at = models.DateTimeField(blank=True, null=True)
+    sent_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Power Automate delivery"
+        verbose_name_plural = "Power Automate deliveries"
+
+    def __str__(self):
+        return f"Check {self.appearance_check_id} - {self.get_status_display()}"
