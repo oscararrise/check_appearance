@@ -8,6 +8,7 @@ Django/PostgreSQL application for **Appearance Preparation** and **Appearance Ch
 - Employee lookup uses `hr_work_employeeidincompany` and displays `raw_root_fullname` plus `hr_work_title` (with `raw_work_title` as fallback).
 - Tattoo data is imported manually from standardized Excel files into Appearance-owned PostgreSQL tables.
 - Preparation scans and Appearance Check evaluations are stored as immutable operational records.
+- Every saved Appearance Check can publish an auditable JSON event to Power Automate for downstream Excel/SharePoint updates.
 - Users and permissions are managed with Django Admin.
 - The operational UI is tablet-first, in English, and uses the ARRISE brand palette.
 
@@ -64,6 +65,26 @@ The importer:
 7. moves successful/partial imports to `data/processed/` and failed files to `data/rejected/`.
 
 A previously processed identical file is skipped by SHA-256 unless `--force` is provided.
+
+## Power Automate
+
+The Appearance Check workflow can POST a JSON event every time an operator saves `Ready`, `Not Ready`, or `Declined`.
+
+Configuration is environment-based:
+
+```env
+POWER_AUTOMATE_ENABLED=True
+POWER_AUTOMATE_FLOW_URL="https://<generated-trigger-url>"
+POWER_AUTOMATE_TIMEOUT_SECONDS=5
+```
+
+The trigger URL is a secret and must never be committed to GitHub.
+
+Full request schema, Excel column mapping, retry behavior and Power Automate setup are documented in:
+
+```text
+docs/power_automate_appearance_check.md
+```
 
 ## Production direction
 
