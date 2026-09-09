@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, time
 from io import BytesIO
 
@@ -11,13 +12,16 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 from openpyxl import Workbook
 
-from .models import AppearanceCheck, PreparationScan, ProcessSchedule
+from .models import AppearanceCheck, PowerAutomateDelivery, PreparationScan, ProcessSchedule
+from .power_automate import publish_appearance_check
 from .services import (
     appearance_approval_payload,
     get_employee_profile,
     resolve_operational_shift,
     tattoo_payload,
 )
+
+logger = logging.getLogger(__name__)
 
 
 SCHEDULE_DEFAULTS = {
@@ -288,7 +292,27 @@ def record_check(request):
         comment=comment,
         recorded_by=request.user,
     )
-    return JsonResponse({"ok": True, "record": _operational_record_payload(record, "CHECK")})
+
+    automation = {"status": "ERROR", "sent": False}
+    try:
+        delivery = publish_appearance_check(record)
+        automation = {
+            "status": delivery.status,
+            "sent": delivery.status == PowerAutomateDelivery.Status.SENT,
+            "attempts": delivery.attempts,
+        }
+    except Exception:
+        # The operational record is the source of truth. A downstream automation
+        # problem must never make the Appearance Check itself disappear.
+        logger.exception("Could not create/send Power Automate delivery for AppearanceCheck %s", record.pk)
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "record": _operational_record_payload(record, "CHECK"),
+            "power_automate": automation,
+        }
+    )
 
 
 def _parse_clock(value):
