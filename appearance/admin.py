@@ -7,10 +7,12 @@ from .models import (
     DataUpload,
     ImportBatch,
     ImportIssue,
+    PowerAutomateDelivery,
     PreparationScan,
     ProcessSchedule,
     TattooRecord,
 )
+from .power_automate import publish_appearance_check
 
 
 @admin.register(DataUpload)
@@ -138,6 +140,61 @@ class AppearanceCheckAdmin(admin.ModelAdmin):
     list_filter = ("status", "shift", "recorded_at")
     search_fields = ("employee_id", "employee_name", "role", "comment")
     readonly_fields = ("employee_id", "employee_name", "role", "shift", "status", "comment", "recorded_at", "recorded_by")
+
+
+@admin.register(PowerAutomateDelivery)
+class PowerAutomateDeliveryAdmin(admin.ModelAdmin):
+    list_display = (
+        "appearance_check",
+        "employee_id",
+        "status",
+        "attempts",
+        "response_status",
+        "last_attempt_at",
+        "sent_at",
+    )
+    list_filter = ("status", "response_status", "created_at")
+    search_fields = (
+        "appearance_check__employee_id",
+        "appearance_check__employee_name",
+        "last_error",
+    )
+    readonly_fields = (
+        "appearance_check",
+        "status",
+        "payload",
+        "attempts",
+        "response_status",
+        "last_error",
+        "last_attempt_at",
+        "sent_at",
+        "created_at",
+        "updated_at",
+    )
+    actions = ("retry_delivery",)
+
+    @admin.display(description="Employee ID")
+    def employee_id(self, obj):
+        return obj.appearance_check.employee_id
+
+    @admin.action(description="Retry selected Power Automate deliveries")
+    def retry_delivery(self, request, queryset):
+        sent = 0
+        failed = 0
+        disabled = 0
+        for delivery in queryset.select_related("appearance_check", "appearance_check__recorded_by"):
+            result = publish_appearance_check(delivery.appearance_check)
+            if result.status == PowerAutomateDelivery.Status.SENT:
+                sent += 1
+            elif result.status == PowerAutomateDelivery.Status.DISABLED:
+                disabled += 1
+            else:
+                failed += 1
+        self.message_user(
+            request,
+            f"Power Automate retry finished: {sent} sent, {failed} failed, {disabled} disabled.",
+            level=messages.SUCCESS if failed == 0 else messages.WARNING,
+        )
 
 
 admin.site.site_header = "ARRISE Appearance Administration"
