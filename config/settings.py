@@ -104,3 +104,10 @@ LOGOUT_REDIRECT_URL = "login"
 DATA_INBOX = BASE_DIR / "data" / "inbox"
 DATA_PROCESSED = BASE_DIR / "data" / "processed"
 DATA_REJECTED = BASE_DIR / "data" / "rejected"
+
+# Power Automate webhook for Appearance Check -> Excel/SharePoint flow.
+# Keep the generated flow URL only in .env / the VM secret store; never commit it.
+POWER_AUTOMATE_ENABLED = os.getenv("POWER_AUTOMATE_ENABLED", "False").lower() in {"1", "true", "yes", "on"}
+POWER_AUTOMATE_FLOW_URL = os.getenv("POWER_AUTOMATE_FLOW_URL", "").strip()
+POWER_AUTOMATE_API_KEY = os.getenv("POWER_AUTOMATE_API_KEY", "").strip()
+POWER_AUTOMATE_TIMEOUT_SECONDS = int(os.getenv("POWER_AUTOMATE_TIMEOUT_SECONDS", "5"))
