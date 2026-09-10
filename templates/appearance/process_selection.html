@@ -11,6 +11,13 @@
             </div>
         </div>
         <div class="topbar-actions">
+            <div class="colombia-clock" data-colombia-clock aria-label="Current date and time in Colombia">
+                <span class="clock-live-dot" aria-hidden="true"></span>
+                <span class="clock-date" data-clock-date>Colombia date</span>
+                <span class="clock-divider" aria-hidden="true"></span>
+                <span class="clock-time" data-clock-time>--:--</span>
+                <span class="clock-zone">COL</span>
+            </div>
             <span class="user-chip"><span class="user-dot" aria-hidden="true"></span>{{ request.user.username }}</span>
             {% if request.user.is_staff %}
             <a class="btn btn-ghost" href="{% url 'appearance:schedule_settings' %}">Schedule settings</a>
