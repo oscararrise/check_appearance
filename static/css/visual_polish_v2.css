@@ -1,0 +1,451 @@
+/* UX/UI polish v2: contrast fixes, operational alert states, horizontal schedule and official branding. */
+
+/* --------------------------------------------------------------------------
+   Official ARRISE logo
+   -------------------------------------------------------------------------- */
+.brand-lockup.brand-with-logo {
+    gap: 12px;
+}
+
+.brand-logo-image {
+    display: block;
+    width: 108px;
+    max-width: 28vw;
+    height: auto;
+    max-height: 34px;
+    object-fit: contain;
+    object-position: left center;
+    filter: brightness(0) invert(1);
+}
+
+.brand-with-logo .brand-product-label {
+    display: block;
+    margin-top: 2px;
+    color: rgba(255,255,255,.72) !important;
+    font-size: 10px !important;
+    font-weight: 590;
+    letter-spacing: .015em !important;
+    white-space: nowrap;
+}
+
+.login-mobile-brand .brand-logo-image {
+    width: 112px;
+    max-width: none;
+    filter: none;
+}
+
+/* --------------------------------------------------------------------------
+   Login contrast: the hero panel is dark, therefore all hero copy must be light.
+   The previous global heading rule incorrectly forced the hero h1 to dark ink.
+   -------------------------------------------------------------------------- */
+.auth-brand-panel,
+.auth-brand-panel .auth-brand-copy,
+.auth-brand-panel .auth-brand-copy h1,
+.auth-brand-panel .auth-brand-copy p,
+.auth-brand-panel .auth-feature strong {
+    color: #ffffff !important;
+}
+
+.auth-brand-panel .eyebrow.light {
+    color: #cdbcf0 !important;
+}
+
+.auth-brand-panel .auth-brand-copy > p:last-child {
+    color: rgba(255,255,255,.76) !important;
+}
+
+.auth-brand-panel .auth-feature small {
+    color: rgba(255,255,255,.68) !important;
+}
+
+.auth-brand-panel .auth-feature > span {
+    color: #bda6eb !important;
+}
+
+.auth-brand-panel .auth-feature {
+    border-top-color: rgba(255,255,255,.13);
+}
+
+/* --------------------------------------------------------------------------
+   Workspace operating schedule: compact horizontal utility strip.
+   -------------------------------------------------------------------------- */
+.schedule-strip-shell {
+    width: min(100%, 1400px);
+    margin: 0 auto;
+    padding: 18px 28px 0;
+}
+
+.schedule-card-horizontal {
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: minmax(225px, .72fr) minmax(0, 2.28fr);
+    gap: 18px;
+    align-items: center;
+    border-radius: 20px;
+    background: rgba(255,255,255,.94);
+}
+
+.schedule-strip-head {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.schedule-strip-title {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.schedule-strip-title > div {
+    min-width: 0;
+}
+
+.schedule-strip-title .eyebrow {
+    margin-bottom: 3px;
+}
+
+.schedule-strip-title h2 {
+    margin: 0;
+    color: var(--color-ink);
+    font-size: 17px;
+    line-height: 1.15;
+    letter-spacing: -.018em;
+}
+
+.schedule-strip-title p:last-child {
+    margin: 3px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 10.5px;
+    line-height: 1.35;
+}
+
+.schedule-card-horizontal .section-icon.small {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+}
+
+.schedule-horizontal-list {
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding: 1px;
+}
+
+.schedule-horizontal-list .schedule-tile {
+    min-width: 190px;
+    flex: 1 1 0;
+    display: grid;
+    grid-template-columns: auto minmax(0,1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border: 1px solid rgba(53,16,106,.10);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fbfaff, #f8f6fc);
+}
+
+.schedule-horizontal-list .schedule-tile:last-child {
+    border-bottom: 1px solid rgba(53,16,106,.10);
+}
+
+.schedule-horizontal-list .schedule-tile:hover {
+    border-color: rgba(127,90,240,.25);
+    background: #ffffff;
+}
+
+.schedule-tile-copy {
+    min-width: 0;
+}
+
+.schedule-tile-copy strong,
+.schedule-tile-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.schedule-horizontal-list .schedule-tile time {
+    padding: 7px 9px;
+    border: 1px solid rgba(53,16,106,.14);
+    border-radius: 10px;
+    background: #fff;
+    color: #35106a;
+    font-size: 11px;
+    font-weight: 780;
+}
+
+.schedule-card-horizontal .btn-small {
+    flex: 0 0 auto;
+}
+
+.schedule-editor-horizontal {
+    grid-column: 1 / -1;
+    padding-top: 15px;
+    border-top: 1px solid rgba(53,16,106,.09);
+}
+
+.workspace-layout-wide {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding-top: 18px;
+}
+
+.workspace-layout-wide .main-column {
+    width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Final decision controls: clearer operational states.
+   These are intentionally more vivid than decorative cards.
+   -------------------------------------------------------------------------- */
+.status-grid {
+    gap: 12px;
+}
+
+.status-btn {
+    min-height: 82px;
+    border: 1px solid transparent;
+    box-shadow: none;
+}
+
+.status-btn.ready {
+    color: #08783f;
+    background: #e2f7ea;
+    border-color: #bde8cc;
+}
+
+.status-btn.ready .status-choice-icon {
+    color: #08783f;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(8,120,63,.10);
+}
+
+.status-btn.warning {
+    color: #9c5b00;
+    background: #fff2cf;
+    border-color: #f2d590;
+}
+
+.status-btn.warning .status-choice-icon {
+    color: #a35d00;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(163,93,0,.10);
+}
+
+.status-btn.declined {
+    color: #c52b26;
+    background: #ffe3e0;
+    border-color: #f4bbb5;
+}
+
+.status-btn.declined .status-choice-icon {
+    color: #c52b26;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(197,43,38,.10);
+}
+
+.status-btn.ready:hover {
+    background: #d5f3e0;
+    border-color: #8fd3aa;
+}
+
+.status-btn.warning:hover {
+    background: #ffebba;
+    border-color: #e9be58;
+}
+
+.status-btn.declined:hover {
+    background: #ffd7d3;
+    border-color: #e9958d;
+}
+
+.status-btn.active {
+    border-width: 2px;
+    transform: translateY(-1px);
+}
+
+.status-btn.ready.active { box-shadow: 0 0 0 4px rgba(8,120,63,.10), 0 10px 24px rgba(8,120,63,.10); }
+.status-btn.warning.active { box-shadow: 0 0 0 4px rgba(156,91,0,.10), 0 10px 24px rgba(156,91,0,.10); }
+.status-btn.declined.active { box-shadow: 0 0 0 4px rgba(197,43,38,.10), 0 10px 24px rgba(197,43,38,.10); }
+
+.required-chip {
+    background: #f0e8ff;
+    border: 1px solid #dfcff9;
+    color: #5b22a5;
+}
+
+/* --------------------------------------------------------------------------
+   Employee guidance: use alert semantics instead of three neutral cards.
+   -------------------------------------------------------------------------- */
+.employee-data-grid-premium {
+    gap: 12px;
+    padding: 12px;
+    background: #f8f6fb;
+}
+
+.employee-data-grid-premium .data-panel {
+    border: 1px solid rgba(53,16,106,.09) !important;
+    border-radius: 17px;
+    background: #ffffff;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.employee-data-grid-premium .data-panel:has(.medical-summary.flagged),
+.employee-data-grid-premium .data-panel:has(.approval-summary.rejected) {
+    background: linear-gradient(180deg, #fff8f7 0%, #fff 48%);
+    border-color: #f0b4ad !important;
+    box-shadow: inset 4px 0 0 #d83a32;
+}
+
+.employee-data-grid-premium .data-panel:has(.tattoo-summary.cover),
+.employee-data-grid-premium .data-panel:has(.approval-summary.pending) {
+    background: linear-gradient(180deg, #fffaf0 0%, #fff 48%);
+    border-color: #edcc81 !important;
+    box-shadow: inset 4px 0 0 #d98a0b;
+}
+
+.employee-data-grid-premium .data-panel:has(.medical-summary.clear),
+.employee-data-grid-premium .data-panel:has(.tattoo-summary.clear),
+.employee-data-grid-premium .data-panel:has(.approval-summary.approved) {
+    background: linear-gradient(180deg, #f5fcf8 0%, #fff 48%);
+    border-color: #b8e0c7 !important;
+    box-shadow: inset 4px 0 0 #198754;
+}
+
+.employee-data-grid-premium .data-panel:has(.medical-summary.unknown),
+.employee-data-grid-premium .data-panel:has(.tattoo-summary.unknown),
+.employee-data-grid-premium .data-panel:has(.approval-summary.unknown) {
+    background: linear-gradient(180deg, #f6f9ff 0%, #fff 48%);
+    border-color: #bfd3f4 !important;
+    box-shadow: inset 4px 0 0 #3f72c8;
+}
+
+.medical-summary,
+.tattoo-summary,
+.approval-summary {
+    border: 1px solid transparent;
+    font-weight: 680;
+}
+
+.medical-summary.flagged,
+.approval-summary.rejected {
+    background: #ffe3e0 !important;
+    border-color: #f3bbb5 !important;
+    color: #b52520 !important;
+}
+
+.tattoo-summary.cover,
+.approval-summary.pending {
+    background: #fff0c9 !important;
+    border-color: #efd089 !important;
+    color: #905300 !important;
+}
+
+.medical-summary.clear,
+.tattoo-summary.clear,
+.approval-summary.approved {
+    background: #e2f7ea !important;
+    border-color: #bce5ca !important;
+    color: #08783f !important;
+}
+
+.medical-summary.unknown,
+.tattoo-summary.unknown,
+.approval-summary.unknown {
+    background: #e8f1ff !important;
+    border-color: #bfd5f7 !important;
+    color: #285ea8 !important;
+}
+
+.medical-icon {
+    background: #ffe7e4 !important;
+    color: #c52b26 !important;
+}
+
+.tattoo-icon {
+    background: #fff0c9 !important;
+    color: #a66100 !important;
+}
+
+.approval-icon {
+    background: #e2f7ea !important;
+    color: #08783f !important;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive behavior
+   -------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+    .schedule-card-horizontal {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .schedule-strip-head {
+        align-items: center;
+    }
+}
+
+@media (max-width: 760px) {
+    .schedule-strip-shell {
+        padding: 14px 16px 0;
+    }
+
+    .schedule-card-horizontal {
+        padding: 14px;
+        border-radius: 18px;
+    }
+
+    .schedule-horizontal-list {
+        margin-right: -14px;
+        padding-right: 14px;
+        scroll-snap-type: x proximity;
+    }
+
+    .schedule-horizontal-list .schedule-tile {
+        min-width: 230px;
+        flex: 0 0 230px;
+        scroll-snap-align: start;
+    }
+
+    .schedule-strip-title p:last-child {
+        display: none;
+    }
+
+    .employee-data-grid-premium {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .brand-logo-image {
+        width: 96px;
+        max-width: 34vw;
+    }
+
+    .brand-with-logo .brand-product-label {
+        font-size: 9px !important;
+    }
+
+    .schedule-strip-head {
+        align-items: flex-start;
+    }
+
+    .schedule-card-horizontal .btn-small {
+        min-height: 36px;
+        padding: 0 11px;
+        font-size: 11px;
+    }
+}
