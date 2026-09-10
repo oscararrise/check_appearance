@@ -1,4 +1,19 @@
 (() => {
+    const clockMarkup = `
+        <div class="colombia-clock" data-colombia-clock aria-label="Current date and time in Colombia">
+            <span class="clock-live-dot" aria-hidden="true"></span>
+            <span class="clock-date" data-clock-date>Colombia date</span>
+            <span class="clock-divider" aria-hidden="true"></span>
+            <span class="clock-time" data-clock-time>--:--</span>
+            <span class="clock-zone">COL</span>
+        </div>`;
+
+    document.querySelectorAll('.topbar-actions').forEach((actions) => {
+        if (!actions.querySelector('[data-colombia-clock]')) {
+            actions.insertAdjacentHTML('afterbegin', clockMarkup);
+        }
+    });
+
     const clocks = document.querySelectorAll('[data-colombia-clock]');
     if (!clocks.length) return;
 
