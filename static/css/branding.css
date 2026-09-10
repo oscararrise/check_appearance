@@ -1,0 +1,69 @@
+/* Official ARRISE wordmark.
+   The application references the canonical brand asset supplied by ARRISE. */
+
+.brand-symbol {
+    width: 112px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    overflow: visible;
+}
+
+.brand-symbol::before {
+    content: "";
+    display: block;
+    width: 112px;
+    height: 38px;
+    background-image: url("https://arrise.com/assets/logos/arrise-logo.png");
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: contain;
+    filter: brightness(0) invert(1);
+}
+
+/* The official wordmark already says ARRISE, so avoid repeating the company name. */
+.brand-lockup > div > strong:first-child {
+    display: none;
+}
+
+.brand-lockup > div {
+    gap: 0;
+}
+
+.brand-lockup span:not(.brand-symbol) {
+    color: rgba(255,255,255,.70) !important;
+    font-size: 10px !important;
+    font-weight: 600;
+    letter-spacing: .015em !important;
+}
+
+/* Mobile login uses a light surface, so keep the logo in its original colors. */
+.login-mobile-brand .brand-symbol::before {
+    filter: none;
+}
+
+.login-mobile-brand .brand-symbol {
+    width: 104px !important;
+    height: 34px !important;
+}
+
+.login-mobile-brand .brand-symbol::before {
+    width: 104px;
+    height: 34px;
+}
+
+.login-mobile-brand > strong {
+    display: none;
+}
+
+@media (max-width: 520px) {
+    .brand-symbol,
+    .brand-symbol::before {
+        width: 98px !important;
+        height: 34px !important;
+    }
+}
