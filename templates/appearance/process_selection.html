@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Select process | ARRISE Appearance{% endblock %}
+{% block body %}
+<div class="app-shell">
+    <header class="app-header">
+        <div class="brand-lockup brand-lockup-light">
+            <span class="brand-symbol" aria-hidden="true">A</span>
+            <div>
+                <strong>ARRISE</strong>
+                <span>Appearance Operations</span>
+            </div>
+        </div>
+        <div class="topbar-actions">
+            <div class="colombia-clock" data-colombia-clock aria-label="Current date and time in Colombia">
+                <span class="clock-live-dot" aria-hidden="true"></span>
+                <span class="clock-date" data-clock-date>Colombia date</span>
+                <span class="clock-divider" aria-hidden="true"></span>
+                <span class="clock-time" data-clock-time>--:--</span>
+                <span class="clock-zone">COL</span>
+            </div>
+            <span class="user-chip"><span class="user-dot" aria-hidden="true"></span>{{ request.user.username }}</span>
+            {% if request.user.is_staff %}
+            <a class="btn btn-ghost" href="{% url 'appearance:schedule_settings' %}">Schedule settings</a>
+            <a class="btn btn-ghost" href="/admin/">Admin</a>
+            {% endif %}
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-ghost" type="submit">Sign out</button></form>
+        </div>
+    </header>
+
+    <main class="selection-page">
+        <section class="selection-intro">
+            <div>
+                <p class="eyebrow">WORKFLOW</p>
+                <h1>Choose your process</h1>
+                <p class="selection-subtitle">Two clear workflows. Pick one and start scanning immediately.</p>
+            </div>
+            <div class="selection-tip">
+                <span class="tip-icon" aria-hidden="true">⌁</span>
+                <div><strong>Scanner ready</strong><span>USB scanners can enter the Employee ID and submit automatically.</span></div>
+            </div>
+        </section>
+
+        <section class="selection-grid">
+            <a class="process-card preparation" href="{% url 'appearance:workspace' 'PREPARATION' %}" aria-label="Open Appearance Preparation">
+                <div class="process-card-top">
+                    <span class="process-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg>
+                    </span>
+                    <span class="process-number">01</span>
+                </div>
+                <div class="process-copy">
+                    <p class="eyebrow">PREPARATION</p>
+                    <h2>Appearance Preparation</h2>
+                    <p>Register arrival to Makeup and immediately review employee, tattoo and approval information.</p>
+                </div>
+                <div class="process-window-list">
+                    {% for row in preparation_schedule %}
+                    <span><strong>{{ row.get_shift_display }}</strong> {{ row.start_time|time:"H:i" }}–{{ row.end_time|time:"H:i" }}</span>
+                    {% endfor %}
+                </div>
+                <span class="process-cta">
+                    <span class="process-cta-copy"><small>GO TO PROCESS</small><strong>Open Preparation</strong></span>
+                    <span class="process-cta-arrow" aria-hidden="true">→</span>
+                </span>
+            </a>
+
+            <a class="process-card check" href="{% url 'appearance:workspace' 'CHECK' %}" aria-label="Open Appearance Check">
+                <div class="process-card-top">
+                    <span class="process-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 12 3 3 7-7"/><circle cx="12" cy="12" r="9"/></svg>
+                    </span>
+                    <span class="process-number">02</span>
+                </div>
+                <div class="process-copy">
+                    <p class="eyebrow">VALIDATION</p>
+                    <h2>Appearance Check</h2>
+                    <p>Review the employee, choose Ready, Not Ready or Declined, and save an operational comment.</p>
+                </div>
+                <div class="process-window-list">
+                    {% for row in check_schedule %}
+                    <span><strong>{{ row.get_shift_display }}</strong> {{ row.start_time|time:"H:i" }}–{{ row.end_time|time:"H:i" }}</span>
+                    {% endfor %}
+                </div>
+                <span class="process-cta">
+                    <span class="process-cta-copy"><small>GO TO PROCESS</small><strong>Open Check</strong></span>
+                    <span class="process-cta-arrow" aria-hidden="true">→</span>
+                </span>
+            </a>
+        </section>
+    </main>
+</div>
+{% endblock %}

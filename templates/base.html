@@ -1,0 +1,25 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#35106a">
+    <meta name="color-scheme" content="light">
+    <title>{% block title %}ARRISE Appearance{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/appearance.css' %}">
+    <link rel="stylesheet" href="{% static 'css/medical_restrictions.css' %}">
+    <link rel="stylesheet" href="{% static 'css/experience.css' %}">
+    <link rel="stylesheet" href="{% static 'css/record_feedback.css' %}">
+    <link rel="stylesheet" href="{% static 'css/schedule_settings.css' %}">
+    <link rel="stylesheet" href="{% static 'css/typography.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_polish.css' %}">
+    <link rel="stylesheet" href="{% static 'css/ui_refinement.css' %}">
+    <link rel="stylesheet" href="{% static 'css/visual_polish_v2.css' %}">
+    <link rel="stylesheet" href="{% static 'css/branding.css' %}">
+    <script src="{% static 'js/ui_clock.js' %}" defer></script>
+</head>
+<body>
+    {% block body %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,140 @@
+/* Workspace hero/header polish.
+   High-contrast, system-font-first hierarchy while preserving ARRISE brand colors. */
+
+.workspace-header.premium-header {
+    color: #fff;
+    background:
+        radial-gradient(circle at 82% 18%, rgba(127, 90, 240, .26), transparent 30%),
+        linear-gradient(122deg, #120826 0%, #200941 44%, #35106a 100%);
+}
+
+.workspace-header .workspace-title-row {
+    align-items: flex-end;
+    gap: 36px;
+    padding-top: 22px;
+}
+
+.workspace-header .workspace-title-line {
+    gap: 14px;
+}
+
+/* The view title is the primary navigation anchor: keep it unmistakably legible. */
+.workspace-header .workspace-title-line h1 {
+    color: #ffffff !important;
+    font-size: clamp(36px, 3.6vw, 50px);
+    line-height: 1.02;
+    font-weight: 790;
+    letter-spacing: -0.038em;
+    text-shadow: none;
+}
+
+.workspace-header .workspace-subtitle {
+    max-width: 760px;
+    margin-top: 10px;
+    color: #e2d9ef !important;
+    font-size: 14px;
+    line-height: 1.55;
+    font-weight: 470;
+    letter-spacing: -0.006em;
+}
+
+.workspace-header .back-link {
+    margin-bottom: 11px;
+    color: #eee7f7;
+    font-weight: 610;
+    opacity: .92;
+}
+
+.workspace-header .back-link:hover {
+    color: #fff;
+    opacity: 1;
+}
+
+.workspace-header .process-chip {
+    min-height: 27px;
+    padding: 0 10px;
+    border: 1px solid rgba(255,255,255,.22);
+    background: rgba(255,255,255,.12);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    font-size: 9px;
+    font-weight: 720;
+    letter-spacing: .075em;
+}
+
+.workspace-header .workflow-steps {
+    padding-bottom: 4px;
+    gap: 10px;
+}
+
+.workspace-header .workflow-step {
+    color: #ded5eb;
+    font-size: 10px;
+    font-weight: 620;
+    letter-spacing: -0.004em;
+}
+
+.workspace-header .workflow-step b {
+    width: 25px;
+    height: 25px;
+    border: 1px solid rgba(255,255,255,.20);
+    background: rgba(255,255,255,.10);
+    color: #fff;
+    font-weight: 700;
+}
+
+.workspace-header .workflow-step.active {
+    color: #fff;
+}
+
+.workspace-header .workflow-step.active b {
+    background: #fff;
+    border-color: #fff;
+    color: #35106a;
+    box-shadow: 0 5px 14px rgba(0,0,0,.12);
+}
+
+.workspace-header .brand-lockup-light strong {
+    color: #fff;
+}
+
+.workspace-header .brand-lockup-light span:not(.brand-symbol) {
+    color: #dcd2ea;
+}
+
+/* Keep secondary header controls visible without competing with the title. */
+.workspace-header .user-chip,
+.workspace-header .btn-ghost {
+    border-color: rgba(255,255,255,.18);
+    background: rgba(255,255,255,.10);
+    color: #fff;
+}
+
+.workspace-header .btn-ghost:hover {
+    background: rgba(255,255,255,.16);
+    border-color: rgba(255,255,255,.26);
+}
+
+@media (max-width: 900px) {
+    .workspace-header .workspace-title-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .workspace-header .workflow-steps {
+        padding-bottom: 0;
+    }
+}
+
+@media (max-width: 680px) {
+    .workspace-header .workspace-title-line h1 {
+        font-size: 32px;
+    }
+
+    .workspace-header .workspace-subtitle {
+        font-size: 13px;
+    }
+}

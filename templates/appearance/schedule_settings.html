@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Schedule settings | ARRISE Appearance{% endblock %}
+{% block body %}
+<div class="schedule-settings-shell">
+    <header class="app-header schedule-settings-header">
+        <div class="brand-lockup brand-lockup-light">
+            <span class="brand-symbol" aria-hidden="true">A</span>
+            <div>
+                <strong>ARRISE</strong>
+                <span>Appearance Operations</span>
+            </div>
+        </div>
+        <div class="topbar-actions">
+            <span class="user-chip"><span class="user-dot" aria-hidden="true"></span>{{ request.user.username }}</span>
+            <a class="btn btn-ghost" href="{% url 'appearance:process_selection' %}">Back to processes</a>
+        </div>
+    </header>
+
+    <main class="schedule-settings-page">
+        <section class="schedule-settings-intro">
+            <div>
+                <p class="eyebrow">SETTINGS</p>
+                <h1>Schedule settings</h1>
+                <p>Manage the official operating windows for Preparation and Appearance Check. Changes are saved directly to the application database and immediately reflected across the platform.</p>
+            </div>
+            <div class="settings-info-card">
+                <span class="settings-info-icon" aria-hidden="true">◷</span>
+                <div>
+                    <strong>Central schedule</strong>
+                    <span>One source of truth for all devices and operators.</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="schedule-settings-grid">
+            <article class="schedule-settings-card preparation-settings" data-process="PREPARATION" data-update-url="{% url 'appearance:update_schedule' 'PREPARATION' %}">
+                <div class="settings-card-head">
+                    <div class="settings-card-icon preparation-icon" aria-hidden="true">01</div>
+                    <div>
+                        <p class="eyebrow">PREPARATION</p>
+                        <h2>Appearance Preparation</h2>
+                        <p>Arrival and pre-check operating windows.</p>
+                    </div>
+                </div>
+
+                <div class="settings-shift-list">
+                    {% for row in preparation_schedule %}
+                    <div class="settings-shift-row" data-shift="{{ row.shift }}">
+                        <div class="settings-shift-name">
+                            <span class="shift-dot {{ row.shift|lower }}"></span>
+                            <div><strong>{{ row.get_shift_display }}</strong><small>Preparation window</small></div>
+                        </div>
+                        <label class="time-field"><span>Start</span><input class="settings-start" type="time" value="{{ row.start_time|time:'H:i' }}" required></label>
+                        <span class="time-separator">→</span>
+                        <label class="time-field"><span>End</span><input class="settings-end" type="time" value="{{ row.end_time|time:'H:i' }}" required></label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="settings-card-footer">
+                    <div class="settings-save-status" role="status"></div>
+                    <button class="btn btn-primary btn-large settings-save-button" type="button">Save Preparation schedule</button>
+                </div>
+            </article>
+
+            <article class="schedule-settings-card check-settings" data-process="CHECK" data-update-url="{% url 'appearance:update_schedule' 'CHECK' %}">
+                <div class="settings-card-head">
+                    <div class="settings-card-icon check-icon" aria-hidden="true">02</div>
+                    <div>
+                        <p class="eyebrow">VALIDATION</p>
+                        <h2>Appearance Check</h2>
+                        <p>Final validation operating windows.</p>
+                    </div>
+                </div>
+
+                <div class="settings-shift-list">
+                    {% for row in check_schedule %}
+                    <div class="settings-shift-row" data-shift="{{ row.shift }}">
+                        <div class="settings-shift-name">
+                            <span class="shift-dot {{ row.shift|lower }}"></span>
+                            <div><strong>{{ row.get_shift_display }}</strong><small>Check window</small></div>
+                        </div>
+                        <label class="time-field"><span>Start</span><input class="settings-start" type="time" value="{{ row.start_time|time:'H:i' }}" required></label>
+                        <span class="time-separator">→</span>
+                        <label class="time-field"><span>End</span><input class="settings-end" type="time" value="{{ row.end_time|time:'H:i' }}" required></label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="settings-card-footer">
+                    <div class="settings-save-status" role="status"></div>
+                    <button class="btn btn-primary btn-large settings-save-button" type="button">Save Check schedule</button>
+                </div>
+            </article>
+        </section>
+    </main>
+</div>
+<script src="{% static 'js/schedule_settings.js' %}"></script>
+{% endblock %}
