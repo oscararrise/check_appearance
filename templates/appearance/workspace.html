@@ -54,7 +54,57 @@
         </div>
     </header>
 
-    <main class="workspace-layout refined-layout">
+    <section class="schedule-strip-shell" aria-label="Operating schedule">
+        <article class="card schedule-card schedule-card-horizontal glass-card">
+            <div class="schedule-strip-head">
+                <div class="schedule-strip-title">
+                    <span class="section-icon small" aria-hidden="true">◷</span>
+                    <div>
+                        <p class="eyebrow">OFFICIAL WINDOWS</p>
+                        <h2>Operating schedule</h2>
+                        <p>Current {{ process_title }} windows · Colombia time</p>
+                    </div>
+                </div>
+                {% if request.user.is_staff %}
+                <button id="schedule-edit-button" type="button" class="btn btn-soft btn-small">Edit schedule</button>
+                {% endif %}
+            </div>
+
+            <div id="schedule-display" class="schedule-list premium-schedule-list schedule-horizontal-list">
+                {% for row in schedule_rows %}
+                <div class="schedule-line schedule-tile" data-schedule-shift="{{ row.shift }}">
+                    <span class="shift-dot {{ row.shift|lower }}"></span>
+                    <div class="schedule-tile-copy">
+                        <strong>{{ row.get_shift_display }}</strong>
+                        <small>{{ process_title }} window</small>
+                    </div>
+                    <time><span class="schedule-start">{{ row.start_time|time:"H:i" }}</span><span class="schedule-separator">–</span><span class="schedule-end">{{ row.end_time|time:"H:i" }}</span></time>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if request.user.is_staff %}
+            <form id="schedule-form" class="schedule-editor schedule-editor-horizontal hidden">
+                <div class="schedule-editor-grid">
+                    {% for row in schedule_rows %}
+                    <div class="schedule-editor-row" data-shift="{{ row.shift }}">
+                        <div class="schedule-editor-label"><span class="shift-dot {{ row.shift|lower }}"></span><strong>{{ row.get_shift_display }}</strong></div>
+                        <label><span>Start</span><input class="schedule-start-input" type="time" value="{{ row.start_time|time:'H:i' }}" required></label>
+                        <label><span>End</span><input class="schedule-end-input" type="time" value="{{ row.end_time|time:'H:i' }}" required></label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div id="schedule-message" class="inline-message hidden" role="status"></div>
+                <div class="schedule-editor-actions">
+                    <button id="schedule-cancel-button" type="button" class="btn btn-soft">Cancel</button>
+                    <button id="schedule-save-button" type="submit" class="btn btn-primary">Save schedule</button>
+                </div>
+            </form>
+            {% endif %}
+        </article>
+    </section>
+
+    <main class="workspace-layout refined-layout workspace-layout-wide">
         <section class="main-column">
             <article class="card scanner-card glass-card">
                 <div class="scanner-accent" aria-hidden="true"></div>
@@ -158,50 +208,6 @@
                 {% endif %}
             </article>
         </section>
-
-        <aside class="side-column">
-            <article class="card schedule-card sticky-card glass-card">
-                <div class="side-card-heading schedule-heading-row">
-                    <div class="side-heading-copy">
-                        <span class="section-icon small" aria-hidden="true">◷</span>
-                        <div><p class="eyebrow">OFFICIAL WINDOWS</p><h2>Operating schedule</h2></div>
-                    </div>
-                    {% if request.user.is_staff %}
-                    <button id="schedule-edit-button" type="button" class="btn btn-soft btn-small">Edit</button>
-                    {% endif %}
-                </div>
-                <p class="side-card-copy">Official windows for this workflow. Changes are stored in the application database.</p>
-
-                <div id="schedule-display" class="schedule-list premium-schedule-list">
-                    {% for row in schedule_rows %}
-                    <div class="schedule-line" data-schedule-shift="{{ row.shift }}">
-                        <span class="shift-dot {{ row.shift|lower }}"></span>
-                        <div><strong>{{ row.get_shift_display }}</strong><small>{{ process_title }} window</small></div>
-                        <time><span class="schedule-start">{{ row.start_time|time:"H:i" }}</span><span class="schedule-separator">–</span><span class="schedule-end">{{ row.end_time|time:"H:i" }}</span></time>
-                    </div>
-                    {% endfor %}
-                </div>
-
-                {% if request.user.is_staff %}
-                <form id="schedule-form" class="schedule-editor hidden">
-                    <div class="schedule-editor-grid">
-                        {% for row in schedule_rows %}
-                        <div class="schedule-editor-row" data-shift="{{ row.shift }}">
-                            <div class="schedule-editor-label"><span class="shift-dot {{ row.shift|lower }}"></span><strong>{{ row.get_shift_display }}</strong></div>
-                            <label><span>Start</span><input class="schedule-start-input" type="time" value="{{ row.start_time|time:'H:i' }}" required></label>
-                            <label><span>End</span><input class="schedule-end-input" type="time" value="{{ row.end_time|time:'H:i' }}" required></label>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <div id="schedule-message" class="inline-message hidden" role="status"></div>
-                    <div class="schedule-editor-actions">
-                        <button id="schedule-cancel-button" type="button" class="btn btn-soft">Cancel</button>
-                        <button id="schedule-save-button" type="submit" class="btn btn-primary">Save schedule</button>
-                    </div>
-                </form>
-                {% endif %}
-            </article>
-        </aside>
     </main>
 
     <section class="history-shell history-shell-premium">
