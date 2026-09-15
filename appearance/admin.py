@@ -39,6 +39,14 @@ class DataUploadAdmin(admin.ModelAdmin):
         "error_message",
     )
 
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        if db_field.name == "source_type":
+            kwargs["choices"] = [
+                (value, "Security" if value == DataUpload.SourceType.SECURITY_GENERAL else label)
+                for value, label in DataUpload.SourceType.choices
+            ]
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
+
     def save_model(self, request, obj, form, change):
         is_new = not change
         if is_new:
@@ -115,7 +123,15 @@ class SecurityInfoRecordAdmin(admin.ModelAdmin):
         "secondary_card_number",
         "vehicle_plate",
     )
-    readonly_fields = ("created_at", "updated_at")
+
+    def get_readonly_fields(self, request, obj=None):
+        return tuple(field.name for field in self.model._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(ProcessSchedule)
