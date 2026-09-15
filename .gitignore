@@ -9,6 +9,9 @@ staticfiles/
 .vscode/
 .idea/
 
+# Runtime uploads created by Django Admin. Never commit uploaded employee/security files.
+data/uploads/
+
 data/inbox/*.xlsx
 data/inbox/*.xls
 data/processed/*.xlsx
