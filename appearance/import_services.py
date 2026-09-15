@@ -1,5 +1,8 @@
+import csv
 import hashlib
+import io
 import re
+import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 
@@ -14,6 +17,7 @@ from .models import (
     HiBobEmployee,
     ImportBatch,
     ImportIssue,
+    SecurityInfoRecord,
     TattooRecord,
 )
 from .services import normalize_employee_id
@@ -46,6 +50,48 @@ APPROVAL_HEADER_ALIASES = {
     "comments": "comments",
 }
 
+SECURITY_HEADER_ALIASES = {
+    "employeeid": "employee_id",
+    "idempleado": "employee_id",
+    "idcolaborador": "employee_id",
+    "numeroempleado": "employee_id",
+    "nroempleado": "employee_id",
+    "documento": "document",
+    "nombre": "first_name",
+    "apellidos": "last_name",
+    "numerocontacto": "contact_number",
+    "rh": "blood_type",
+    "tipo": "vehicle_type",
+    "marca": "vehicle_brand",
+    "modelo": "vehicle_model",
+    "color": "vehicle_color",
+    "placasvehiculo": "vehicle_plate",
+    "departamento": "department",
+    "cargo": "role",
+    "notarjeta": "card_number",
+    "notarjetasec": "secondary_card_number",
+    "facilitycodewfm": "facility_code_wfm",
+    "facilitycodese": "facility_code_se",
+    "fotoydatos": "photo_and_data",
+    "eps": "eps",
+    "notarjeta6digitos": "six_digit_card_number",
+    "reposicion": "first_replacement",
+    "fecha1erareposicion": "first_replacement_date",
+    "segundareposicion": "second_replacement",
+    "fecha2dareposicion": "second_replacement_date",
+}
+
+SECURITY_REQUIRED_FIELDS = {
+    "document",
+    "first_name",
+    "last_name",
+    "department",
+    "role",
+    "card_number",
+}
+
+SUPPORTED_EXCEL_SUFFIXES = {".xlsx", ".xlsm", ".xltx", ".xltm"}
+
 
 class ImportServiceError(Exception):
     pass
@@ -53,12 +99,16 @@ class ImportServiceError(Exception):
 
 def normalize_header(value):
     value = str(value or "").strip().lower()
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(character for character in value if not unicodedata.combining(character))
     return re.sub(r"[^a-z0-9]", "", value)
 
 
 def clean_text(value):
     if value is None:
         return ""
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
     return str(value).strip()
 
 
@@ -132,6 +182,27 @@ def parse_optional_date(value, workbook_epoch):
     return None, raw
 
 
+def _build_header_map(row, aliases):
+    header_map = {}
+    for index, value in enumerate(row):
+        mapped = aliases.get(normalize_header(value))
+        if mapped:
+            header_map[mapped] = index
+    return header_map
+
+
+def _build_security_header_map(row):
+    header_map = _build_header_map(row, SECURITY_HEADER_ALIASES)
+
+    if "employee_id" not in header_map and "document" in header_map:
+        document_index = header_map["document"]
+        previous_index = document_index - 1
+        if previous_index >= 0 and not normalize_header(row[previous_index]):
+            header_map["employee_id"] = previous_index
+
+    return header_map
+
+
 def _find_header_sheet(workbook, aliases, required_fields):
     candidates = []
     for sheet in workbook.worksheets:
@@ -140,13 +211,7 @@ def _find_header_sheet(workbook, aliases, required_fields):
             sheet.iter_rows(min_row=1, max_row=max_search_row, values_only=True),
             start=1,
         ):
-            normalized = [normalize_header(value) for value in row]
-            header_map = {}
-            for index, header in enumerate(normalized):
-                mapped = aliases.get(header)
-                if mapped:
-                    header_map[mapped] = index
-
+            header_map = _build_header_map(row, aliases)
             if required_fields.issubset(header_map):
                 candidates.append((sheet.max_row or 0, sheet, header_map, row_number))
                 break
@@ -172,18 +237,48 @@ def find_approval_sheet(workbook):
     )
 
 
-def detect_source_type(workbook):
-    tattoo = find_tattoo_sheet(workbook)
-    approval = find_approval_sheet(workbook)
+def find_security_sheet(workbook):
+    candidates = []
+    for sheet in workbook.worksheets:
+        max_search_row = min(sheet.max_row or 1, 15)
+        for row_number, row in enumerate(
+            sheet.iter_rows(min_row=1, max_row=max_search_row, values_only=True),
+            start=1,
+        ):
+            header_map = _build_security_header_map(row)
+            if SECURITY_REQUIRED_FIELDS.issubset(header_map):
+                candidates.append((sheet.max_row or 0, sheet, header_map, row_number))
+                break
 
-    if tattoo and not approval:
-        return ImportBatch.SourceType.TATTOOS
-    if approval and not tattoo:
-        return ImportBatch.SourceType.APPEARANCE_APPROVALS
-    if tattoo and approval:
-        raise ImportServiceError("Workbook matches more than one supported AP source format.")
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: item[0])
+
+
+def find_security_csv_header(rows):
+    for index, row in enumerate(rows[:15]):
+        header_map = _build_security_header_map(row)
+        if SECURITY_REQUIRED_FIELDS.issubset(header_map):
+            return header_map, index
+    return None
+
+
+def detect_source_type(workbook):
+    matches = []
+    if find_tattoo_sheet(workbook):
+        matches.append(ImportBatch.SourceType.TATTOOS)
+    if find_approval_sheet(workbook):
+        matches.append(ImportBatch.SourceType.APPEARANCE_APPROVALS)
+    if find_security_sheet(workbook):
+        matches.append(ImportBatch.SourceType.SECURITY_GENERAL)
+
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        raise ImportServiceError("Workbook matches more than one supported source format.")
     raise ImportServiceError(
-        "Workbook format was not recognized. Expected the GP tattoo tracker or Appearance Approvals Joined Tracker."
+        "Workbook format was not recognized. Expected the GP tattoo tracker, "
+        "Appearance approvals tracker, or Security general base."
     )
 
 
@@ -431,25 +526,176 @@ def _import_approvals(workbook, batch, source_file):
     return _finish_batch(batch, len(valid_rows), rejected_rows)
 
 
-def import_workbook(path, source_type="AUTO", force=False, source_file_name=None):
-    path = Path(path)
-    if not path.exists():
-        raise ImportServiceError(f"File not found: {path}")
+def _read_security_rows(values_iter, header_map, first_row_number):
+    records = []
+    security_fields = set(SECURITY_HEADER_ALIASES.values()) | {"employee_id"}
 
-    workbook = load_workbook(path, data_only=True, read_only=True)
-    requested = (source_type or "AUTO").upper()
-    if requested == DataUpload.SourceType.AUTO:
-        detected = detect_source_type(workbook)
-    elif requested in {
-        ImportBatch.SourceType.TATTOOS,
-        ImportBatch.SourceType.APPEARANCE_APPROVALS,
-    }:
-        detected = requested
-    else:
-        raise ImportServiceError(f"Unsupported source type: {source_type}")
+    for row_number, values in enumerate(values_iter, start=first_row_number):
+        def get(field):
+            index = header_map.get(field)
+            return values[index] if index is not None and index < len(values) else None
 
+        relevant_values = [get(field) for field in security_fields]
+        if all(clean_text(value) == "" for value in relevant_values):
+            continue
+
+        records.append({
+            "row_number": row_number,
+            "employee_id": normalize_employee_id(get("employee_id")),
+            "document": normalize_employee_id(get("document")),
+            "first_name": clean_text(get("first_name")),
+            "last_name": clean_text(get("last_name")),
+            "contact_number": clean_text(get("contact_number")),
+            "blood_type": clean_text(get("blood_type")),
+            "vehicle_type": clean_text(get("vehicle_type")),
+            "vehicle_brand": clean_text(get("vehicle_brand")),
+            "vehicle_model": clean_text(get("vehicle_model")),
+            "vehicle_color": clean_text(get("vehicle_color")),
+            "vehicle_plate": clean_text(get("vehicle_plate")),
+            "department": clean_text(get("department")),
+            "role": clean_text(get("role")),
+            "card_number": clean_text(get("card_number")),
+            "secondary_card_number": clean_text(get("secondary_card_number")),
+            "facility_code_wfm": clean_text(get("facility_code_wfm")),
+            "facility_code_se": clean_text(get("facility_code_se")),
+            "photo_and_data": clean_text(get("photo_and_data")),
+            "eps": clean_text(get("eps")),
+            "six_digit_card_number": clean_text(get("six_digit_card_number")),
+            "first_replacement": clean_text(get("first_replacement")),
+            "first_replacement_date": clean_text(get("first_replacement_date")),
+            "second_replacement": clean_text(get("second_replacement")),
+            "second_replacement_date": clean_text(get("second_replacement_date")),
+        })
+    return records
+
+
+def _save_security_snapshot(rows, batch, source_file, source_sheet):
+    batch.rows_received = len(rows)
+    batch.save(update_fields=["rows_received"])
+
+    if not rows:
+        raise ImportServiceError("Security general base contains no data rows.")
+
+    valid_rows = []
+    rejected_rows = 0
+    seen_documents = set()
+
+    for row in rows:
+        if not row["document"]:
+            rejected_rows += 1
+            _issue(batch, row["row_number"], row["employee_id"], "Missing DOCUMENTO.")
+            continue
+        if row["document"] in seen_documents:
+            rejected_rows += 1
+            _issue(
+                batch,
+                row["row_number"],
+                row["employee_id"],
+                f"Duplicate DOCUMENTO in this file: {row['document']}.",
+            )
+            continue
+        seen_documents.add(row["document"])
+        valid_rows.append(row)
+
+    if not valid_rows:
+        raise ImportServiceError(
+            "No valid Security general base rows were found. Import aborted; the previous active snapshot was kept."
+        )
+
+    with transaction.atomic(using="default"):
+        SecurityInfoRecord.objects.filter(is_active=True).update(is_active=False)
+        SecurityInfoRecord.objects.bulk_create([
+            SecurityInfoRecord(
+                employee_id=row["employee_id"],
+                document=row["document"],
+                first_name=row["first_name"],
+                last_name=row["last_name"],
+                contact_number=row["contact_number"],
+                blood_type=row["blood_type"],
+                vehicle_type=row["vehicle_type"],
+                vehicle_brand=row["vehicle_brand"],
+                vehicle_model=row["vehicle_model"],
+                vehicle_color=row["vehicle_color"],
+                vehicle_plate=row["vehicle_plate"],
+                department=row["department"],
+                role=row["role"],
+                card_number=row["card_number"],
+                secondary_card_number=row["secondary_card_number"],
+                facility_code_wfm=row["facility_code_wfm"],
+                facility_code_se=row["facility_code_se"],
+                photo_and_data=row["photo_and_data"],
+                eps=row["eps"],
+                six_digit_card_number=row["six_digit_card_number"],
+                first_replacement=row["first_replacement"],
+                first_replacement_date=row["first_replacement_date"],
+                second_replacement=row["second_replacement"],
+                second_replacement_date=row["second_replacement_date"],
+                source_file=source_file,
+                source_sheet=source_sheet,
+                import_batch=batch,
+            )
+            for row in valid_rows
+        ])
+
+    return _finish_batch(batch, len(valid_rows), rejected_rows)
+
+
+def _import_security_workbook(workbook, batch, source_file):
+    candidate = find_security_sheet(workbook)
+    if candidate is None:
+        raise ImportServiceError("Security general base sheet was not found.")
+
+    _, sheet, header_map, header_row = candidate
+    rows = _read_security_rows(
+        sheet.iter_rows(min_row=header_row + 1, values_only=True),
+        header_map,
+        header_row + 1,
+    )
+    return _save_security_snapshot(rows, batch, source_file, sheet.title)
+
+
+def _read_csv_file(path):
+    raw = Path(path).read_bytes()
+    text = None
+    for encoding in ("utf-8-sig", "cp1252", "latin-1"):
+        try:
+            text = raw.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+
+    if text is None:
+        raise ImportServiceError("CSV encoding could not be read.")
+
+    try:
+        dialect = csv.Sniffer().sniff(text[:8192], delimiters=",;\t|")
+    except csv.Error:
+        dialect = csv.excel
+
+    return list(csv.reader(io.StringIO(text), dialect))
+
+
+def _import_security_csv(path, batch, source_file):
+    csv_rows = _read_csv_file(path)
+    candidate = find_security_csv_header(csv_rows)
+    if candidate is None:
+        raise ImportServiceError(
+            "CSV format was not recognized as the Security general base. "
+            "Required columns include DOCUMENTO, NOMBRE, APELLIDOS, DEPARTAMENTO, CARGO and No TARJETA."
+        )
+
+    header_map, header_index = candidate
+    data_rows = csv_rows[header_index + 1:]
+    rows = _read_security_rows(
+        data_rows,
+        header_map,
+        header_index + 2,
+    )
+    return _save_security_snapshot(rows, batch, source_file, "CSV")
+
+
+def _create_or_skip_batch(path, detected, file_name, force):
     digest = file_sha256(path)
-    file_name = source_file_name or path.name
 
     if not force and ImportBatch.objects.filter(
         file_hash=digest,
@@ -462,26 +708,103 @@ def import_workbook(path, source_type="AUTO", force=False, source_file_name=None
             source_type=detected,
             status=ImportBatch.Status.SKIPPED,
             finished_at=timezone.now(),
-        )
+        ), True
 
-    batch = ImportBatch.objects.create(
+    return ImportBatch.objects.create(
         file_name=file_name,
         file_hash=digest,
         source_type=detected,
-    )
+    ), False
+
+
+def _mark_batch_failed(batch, exc):
+    batch.status = ImportBatch.Status.FAILED
+    batch.finished_at = timezone.now()
+    batch.save(update_fields=["status", "finished_at"])
+    _issue(batch, None, "", str(exc))
+
+
+def import_workbook(path, source_type="AUTO", force=False, source_file_name=None):
+    """Import one supported source file.
+
+    The historical public function name is kept for compatibility, but the
+    importer now accepts both Excel workbooks and CSV files.
+    """
+    path = Path(path)
+    if not path.exists():
+        raise ImportServiceError(f"File not found: {path}")
+
+    requested = (source_type or "AUTO").upper()
+    file_name = source_file_name or path.name
+    suffix = path.suffix.lower()
+
+    if suffix == ".csv":
+        csv_rows = _read_csv_file(path)
+        security_candidate = find_security_csv_header(csv_rows)
+
+        if requested == DataUpload.SourceType.AUTO:
+            if security_candidate is None:
+                raise ImportServiceError(
+                    "CSV format was not recognized. CSV upload is currently supported for the Security general base."
+                )
+            detected = ImportBatch.SourceType.SECURITY_GENERAL
+        elif requested == ImportBatch.SourceType.SECURITY_GENERAL:
+            detected = requested
+        else:
+            raise ImportServiceError(
+                "CSV upload is supported for Security general base. "
+                "Use an Excel workbook for the tattoo or appearance approvals trackers."
+            )
+
+        batch, skipped = _create_or_skip_batch(path, detected, file_name, force)
+        if skipped:
+            return batch
+
+        try:
+            return _import_security_csv(path, batch, file_name)
+        except Exception as exc:
+            _mark_batch_failed(batch, exc)
+            if isinstance(exc, ImportServiceError):
+                raise
+            raise ImportServiceError(str(exc)) from exc
+
+    if suffix not in SUPPORTED_EXCEL_SUFFIXES:
+        raise ImportServiceError(
+            "Unsupported file format. Supported formats are .csv, .xlsx, .xlsm, .xltx and .xltm."
+        )
 
     try:
-        if detected == ImportBatch.SourceType.TATTOOS:
-            return _import_tattoos(workbook, batch, file_name)
-        return _import_approvals(workbook, batch, file_name)
+        workbook = load_workbook(path, data_only=True, read_only=True)
     except Exception as exc:
-        batch.status = ImportBatch.Status.FAILED
-        batch.finished_at = timezone.now()
-        batch.save(update_fields=["status", "finished_at"])
-        _issue(batch, None, "", str(exc))
-        if isinstance(exc, ImportServiceError):
-            raise
-        raise ImportServiceError(str(exc)) from exc
+        raise ImportServiceError(f"Excel file could not be opened: {exc}") from exc
+
+    try:
+        if requested == DataUpload.SourceType.AUTO:
+            detected = detect_source_type(workbook)
+        elif requested in {
+            ImportBatch.SourceType.TATTOOS,
+            ImportBatch.SourceType.APPEARANCE_APPROVALS,
+            ImportBatch.SourceType.SECURITY_GENERAL,
+        }:
+            detected = requested
+        else:
+            raise ImportServiceError(f"Unsupported source type: {source_type}")
+
+        batch, skipped = _create_or_skip_batch(path, detected, file_name, force)
+        if skipped:
+            return batch
+
+        try:
+            if detected == ImportBatch.SourceType.TATTOOS:
+                return _import_tattoos(workbook, batch, file_name)
+            if detected == ImportBatch.SourceType.APPEARANCE_APPROVALS:
+                return _import_approvals(workbook, batch, file_name)
+            return _import_security_workbook(workbook, batch, file_name)
+        except Exception as exc:
+            _mark_batch_failed(batch, exc)
+            if isinstance(exc, ImportServiceError):
+                raise
+            raise ImportServiceError(str(exc)) from exc
     finally:
         workbook.close()
 
