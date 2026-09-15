@@ -10,6 +10,7 @@ from .models import (
     PowerAutomateDelivery,
     PreparationScan,
     ProcessSchedule,
+    SecurityInfoRecord,
     TattooRecord,
 )
 from .power_automate import publish_appearance_check
@@ -50,13 +51,13 @@ class DataUploadAdmin(admin.ModelAdmin):
                 if batch.status == ImportBatch.Status.SKIPPED:
                     self.message_user(
                         request,
-                        "This exact workbook was already imported. No database snapshot was changed.",
+                        "This exact file was already imported. No database snapshot was changed.",
                         level=messages.WARNING,
                     )
                 else:
                     self.message_user(
                         request,
-                        f"Workbook processed: {batch.rows_imported} rows imported, "
+                        f"File processed: {batch.rows_imported} rows imported, "
                         f"{batch.rows_rejected} rows rejected ({batch.get_status_display()}).",
                         level=messages.SUCCESS if batch.status == ImportBatch.Status.SUCCESS else messages.WARNING,
                     )
@@ -87,6 +88,34 @@ class AppearanceApprovalRecordAdmin(admin.ModelAdmin):
     search_fields = ("employee_id", "source_name", "responsible", "situation", "comments")
     readonly_fields = ("created_at", "updated_at")
     exclude = ("test_final_date", "test_final_date_raw")
+
+
+@admin.register(SecurityInfoRecord)
+class SecurityInfoRecordAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee_id",
+        "document",
+        "first_name",
+        "last_name",
+        "department",
+        "role",
+        "card_number",
+        "is_active",
+        "updated_at",
+    )
+    list_filter = ("department", "is_active", "source_file")
+    search_fields = (
+        "employee_id",
+        "document",
+        "first_name",
+        "last_name",
+        "contact_number",
+        "role",
+        "card_number",
+        "secondary_card_number",
+        "vehicle_plate",
+    )
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(ProcessSchedule)
