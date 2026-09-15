@@ -31,6 +31,7 @@ class ImportBatch(models.Model):
     class SourceType(models.TextChoices):
         TATTOOS = "TATTOOS", "GP tattoo tracker"
         APPEARANCE_APPROVALS = "APPEARANCE_APPROVALS", "Appearance approvals tracker"
+        SECURITY_GENERAL = "SECURITY_GENERAL", "Security general base"
 
     class Status(models.TextChoices):
         PROCESSING = "PROCESSING", "Processing"
@@ -134,11 +135,58 @@ class AppearanceApprovalRecord(models.Model):
         return f"{self.employee_id} - {self.situation or 'Appearance approval'} - {self.get_status_display()}"
 
 
+class SecurityInfoRecord(models.Model):
+    employee_id = models.CharField(max_length=50, blank=True, db_index=True)
+    document = models.CharField(max_length=50, db_index=True)
+    first_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=200, blank=True)
+    contact_number = models.CharField(max_length=100, blank=True)
+    blood_type = models.CharField(max_length=20, blank=True)
+    vehicle_type = models.CharField(max_length=100, blank=True)
+    vehicle_brand = models.CharField(max_length=100, blank=True)
+    vehicle_model = models.CharField(max_length=100, blank=True)
+    vehicle_color = models.CharField(max_length=100, blank=True)
+    vehicle_plate = models.CharField(max_length=100, blank=True)
+    department = models.CharField(max_length=255, blank=True)
+    role = models.CharField(max_length=255, blank=True)
+    card_number = models.CharField(max_length=255, blank=True)
+    secondary_card_number = models.CharField(max_length=255, blank=True)
+    facility_code_wfm = models.CharField(max_length=100, blank=True)
+    facility_code_se = models.CharField(max_length=100, blank=True)
+    photo_and_data = models.CharField(max_length=100, blank=True)
+    eps = models.CharField(max_length=255, blank=True)
+    six_digit_card_number = models.CharField(max_length=255, blank=True)
+    first_replacement = models.CharField(max_length=255, blank=True)
+    first_replacement_date = models.CharField(max_length=100, blank=True)
+    second_replacement = models.CharField(max_length=255, blank=True)
+    second_replacement_date = models.CharField(max_length=100, blank=True)
+    source_file = models.CharField(max_length=255)
+    source_sheet = models.CharField(max_length=100, blank=True)
+    import_batch = models.ForeignKey(ImportBatch, on_delete=models.PROTECT, related_name="security_records")
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["employee_id", "document", "-created_at"]
+        indexes = [
+            models.Index(fields=["employee_id", "is_active"], name="sec_info_emp_active_idx"),
+            models.Index(fields=["document", "is_active"], name="sec_info_doc_active_idx"),
+        ]
+        verbose_name = "Security information"
+        verbose_name_plural = "Security information"
+
+    def __str__(self):
+        name = f"{self.first_name} {self.last_name}".strip()
+        return f"{self.employee_id or self.document} - {name or 'Security record'}"
+
+
 class DataUpload(models.Model):
     class SourceType(models.TextChoices):
         AUTO = "AUTO", "Auto-detect"
         TATTOOS = "TATTOOS", "GP tattoo tracker"
         APPEARANCE_APPROVALS = "APPEARANCE_APPROVALS", "Appearance approvals tracker"
+        SECURITY_GENERAL = "SECURITY_GENERAL", "Security general base"
 
     file = models.FileField(upload_to="appearance_imports/%Y/%m/")
     source_type = models.CharField(max_length=50, choices=SourceType.choices, default=SourceType.AUTO)
