@@ -140,6 +140,36 @@
         saveToastTimer = window.setTimeout(() => toast.classList.remove('visible'), 3200);
     };
 
+    const renderStudioAssignment = (assignment) => {
+        const container = document.getElementById('studio-assignment-content');
+        if (!container) return;
+
+        if (!assignment?.found) {
+            const message = assignment?.unavailable
+                ? 'Studio assignment is temporarily unavailable. The employee profile can still be processed.'
+                : 'No studio assignment was found for this Employee ID in the current Power Automate response.';
+            container.innerHTML = `<div class="studio-assignment-empty">${escapeHtml(message)}</div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="studio-assignment-summary">
+                <div class="studio-assignment-fact">
+                    <span>Assignment type</span>
+                    <strong>${escapeHtml(assignment.assignment_type || 'Not specified')}</strong>
+                </div>
+                <div class="studio-assignment-fact">
+                    <span>Studio</span>
+                    <strong>${escapeHtml(assignment.studio || assignment.studio_title || 'Not specified')}</strong>
+                </div>
+                <div class="studio-assignment-fact">
+                    <span>Game</span>
+                    <strong>${escapeHtml(assignment.game || 'Not specified')}</strong>
+                </div>
+            </div>
+        `;
+    };
+
     const renderTattoos = (tattoos) => {
         const summary = document.getElementById('tattoo-summary');
         const records = document.getElementById('tattoo-records');
@@ -264,6 +294,7 @@
         document.getElementById('employee-id').textContent = employee.employee_id;
         document.getElementById('employee-role').textContent = employee.role;
         renderLatestRecord(employee.latest_process_record);
+        renderStudioAssignment(employee.studio_assignment);
         renderMedicalRestrictions(employee.appearance_approvals?.medical_restrictions);
         renderTattoos(employee.tattoos);
         renderApprovals(employee.appearance_approvals);
@@ -397,7 +428,7 @@
             return;
         }
 
-        showMessage('Searching HiBob and Appearance data…', 'info');
+        showMessage('Searching HiBob, studio assignment and Appearance data…', 'info');
         try {
             const result = await postJson(shell.dataset.lookupUrl, { employee_id: employeeId, process });
             renderEmployee(result.employee);
