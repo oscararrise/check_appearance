@@ -14,6 +14,7 @@ from openpyxl import Workbook
 
 from .models import AppearanceCheck, PowerAutomateDelivery, PreparationScan, ProcessSchedule
 from .power_automate import publish_appearance_check
+from .studio_assignment import fetch_studio_assignment
 from .services import (
     appearance_approval_payload,
     get_employee_profile,
@@ -244,6 +245,11 @@ def lookup_employee(request):
             status=404,
         )
 
+    studio_assignment = fetch_studio_assignment(
+        profile.employee_id,
+        profile.full_name,
+    )
+
     return JsonResponse(
         {
             "ok": True,
@@ -253,6 +259,7 @@ def lookup_employee(request):
                 "role": profile.role,
                 "tattoos": tattoo_payload(profile),
                 "appearance_approvals": appearance_approval_payload(profile),
+                "studio_assignment": studio_assignment,
                 "latest_process_record": _latest_employee_record(profile.employee_id, process),
             },
         }
