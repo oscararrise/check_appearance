@@ -185,11 +185,21 @@ def parse_studio_assignment(payload: dict, employee_id: str, employee_name: str 
 
     employee_text = _clean(employee_row.get(text_key)) if text_key else ""
 
+    assignment_type = _extract_assignment_type(header_text)
+
+    # Some Power Automate Excel tables keep Generic/Dedicated in the
+    # original Excel column name rather than in every section title.
+    # Use that only as a fallback so a row-level section title always wins.
+    if not assignment_type and text_key and text_key != "Column2":
+        assignment_type = _extract_assignment_type(
+            _decode_excel_column_name(text_key)
+        )
+
     result.update(
         {
             "found": True,
             "studio": _extract_studio(header_text),
-            "assignment_type": _extract_assignment_type(header_text),
+            "assignment_type": assignment_type,
             "game": _extract_game(employee_text, employee_name),
             "studio_title": header_text,
         }
