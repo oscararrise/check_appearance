@@ -37,7 +37,7 @@ class PowerAutomateIntegrationTests(TestCase):
         self.assertEqual(payload["not_ready_declined"], "Not Ready")
         self.assertEqual(payload["comment"], "Hair correction required.")
         self.assertTrue(payload["late"])
-        self.assertEqual(payload["late_label"], "Yes")
+        self.assertEqual(payload["late_label"], "Late")
         self.assertTrue(payload["late_marked_at"])
         self.assertTrue(payload["late_marked_time"])
         self.assertEqual(payload["fs_input"], "")
