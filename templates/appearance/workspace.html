@@ -311,8 +311,8 @@
                             </td>
                             <td class="history-late">
                                 {% if process == "CHECK" %}
-                                    {% if item.is_late is True %}<span class="late-pill late-yes">Yes{% if item.late_marked_at %} · {{ item.late_marked_at|date:"H:i:s" }}{% endif %}</span>
-                                    {% elif item.is_late is False %}<span class="late-pill late-no">No</span>
+                                    {% if item.is_late is True %}<span class="late-pill late-yes">Late{% if item.late_marked_at %} · {{ item.late_marked_at|date:"H:i:s" }}{% endif %}</span>
+                                    {% elif item.is_late is False %}<span class="late-pill late-no">On time</span>
                                     {% else %}<span class="late-pill late-unknown">—</span>{% endif %}
                                 {% else %}—{% endif %}
                             </td>
