@@ -9,19 +9,109 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+_OPERATIONAL_COLUMN_NAMES = {
+    "team",
+    "appereance check",
+    "appearance check",
+    "fs imput",
+    "fs input",
+    "not ready/declined",
+    "comment",
+    "comment update (final check)",
+    "tattoo policy",
+}
+
+
 def _clean(value) -> str:
     return re.sub(r"\s+", " ", str(value or "").replace("\u00a0", " ")).strip()
 
 
+def _normalise_key(value) -> str:
+    return _clean(value).casefold()
+
+
+def _decode_excel_column_name(value: str) -> str:
+    """Decode Excel/Power Automate names such as 7_x002e_1 -> 7.1."""
+    text = str(value or "")
+
+    def replace(match):
+        try:
+            return chr(int(match.group(1), 16))
+        except (TypeError, ValueError):
+            return match.group(0)
+
+    return _clean(re.sub(r"_x([0-9a-fA-F]{4})_", replace, text))
+
+
+def _row_id(row: dict) -> str:
+    """Support both Power Automate shapes: Column1/Column2 and ID/dynamic-name."""
+    if "Column1" in row:
+        return _clean(row.get("Column1"))
+
+    for key, value in row.items():
+        if _normalise_key(key) == "id":
+            return _clean(value)
+
+    return ""
+
+
+def _infer_text_key(rows: list[dict]) -> str:
+    """
+    Return the column containing the employee name/game and studio section title.
+
+    Table4-style responses expose it as Column2.
+    Other Excel tables expose the first Excel header as the JSON property name,
+    e.g. "7_x002e_1 Spanish (LIVE) Generic".
+    """
+    if any(isinstance(row, dict) and "Column2" in row for row in rows):
+        return "Column2"
+
+    candidate_scores: dict[str, int] = {}
+
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+
+        for key, value in row.items():
+            normalised = _normalise_key(key)
+
+            if (
+                normalised == "id"
+                or normalised in _OPERATIONAL_COLUMN_NAMES
+                or normalised == "iteminternalid"
+                or key.startswith("@")
+            ):
+                continue
+
+            # Prefer a real Excel data column: rows with names/section titles
+            # will repeatedly contain non-empty values here.
+            score = 1
+            if _clean(value):
+                score += 3
+            if re.search(r"_x[0-9a-fA-F]{4}_", key):
+                score += 2
+
+            candidate_scores[key] = candidate_scores.get(key, 0) + score
+
+    if not candidate_scores:
+        return ""
+
+    return max(candidate_scores, key=candidate_scores.get)
+
+
 def _extract_assignment_type(header_text: str) -> str:
-    match = re.search(r"\b(Dedicated|Generic)\s*$", header_text, re.IGNORECASE)
+    # Generic/Dedicated is not always the final text; some headers append
+    # "(NO VISIBLE TATTOOS)" afterwards.
+    match = re.search(r"\b(Dedicated|Generic)\b", header_text, re.IGNORECASE)
     return match.group(1).title() if match else ""
 
 
 def _extract_studio(header_text: str) -> str:
+    # Accept 7.3, S7.4, "S 7.4", 8.1 + 8.8 and 9.1.3 + 9.5.1.
     match = re.match(
-        r"^\s*(\d+(?:\.\d+)?(?:\s*\+\s*\d+(?:\.\d+)?)*)\b",
+        r"^\s*S?\s*(\d+(?:\.\d+)+(?:\s*\+\s*\d+(?:\.\d+)+)*)\b",
         header_text,
+        re.IGNORECASE,
     )
     return _clean(match.group(1)) if match else ""
 
@@ -35,7 +125,7 @@ def _extract_game(row_text: str, employee_name: str) -> str:
 
     # Fallback for small naming differences between HiBob and Excel.
     game_match = re.search(
-        r"\b(?:BJ|SP|FBJ|RW|VIP|MW|TP|SH)\b",
+        r"\b(?:BJ|SP|FBJ|RW|VIP|MW|TP|SH|ONE|SPEED)\b",
         row_text,
         re.IGNORECASE,
     )
@@ -51,12 +141,13 @@ def parse_studio_assignment(payload: dict, employee_id: str, employee_name: str 
         rows = []
 
     target = _clean(employee_id)
+    text_key = _infer_text_key(rows)
     employee_index = None
 
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
             continue
-        if _clean(row.get("Column1")) == target:
+        if _row_id(row) == target:
             employee_index = index
             break
 
@@ -79,12 +170,20 @@ def parse_studio_assignment(payload: dict, employee_id: str, employee_name: str 
         candidate = rows[index]
         if not isinstance(candidate, dict):
             continue
-        if _clean(candidate.get("Column1")).upper() == "ID":
+        if _row_id(candidate).upper() == "ID":
             header_row = candidate
             break
 
-    header_text = _clean(header_row.get("Column2")) if header_row else ""
-    employee_text = _clean(employee_row.get("Column2"))
+    header_text = ""
+    if header_row and text_key:
+        header_text = _clean(header_row.get(text_key))
+
+    # In some Power Automate Excel responses the first studio title is the
+    # JSON property name itself rather than a data row.
+    if not header_text and text_key and text_key != "Column2":
+        header_text = _decode_excel_column_name(text_key)
+
+    employee_text = _clean(employee_row.get(text_key)) if text_key else ""
 
     result.update(
         {
