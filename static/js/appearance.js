@@ -73,9 +73,12 @@
         panel.className = 'latest-record-panel';
         panel.innerHTML = `
             <div class="latest-record-heading">
-                <div>
-                    <p class="eyebrow">LAST PROCESS RECORD</p>
-                    <h3>Most recent activity for this employee</h3>
+                <div class="latest-record-title">
+                    <span class="data-panel-icon latest-record-icon" aria-hidden="true">↟</span>
+                    <div>
+                        <p class="eyebrow">LAST PROCESS RECORD</p>
+                        <h3>Most recent activity for this employee</h3>
+                    </div>
                 </div>
                 <span id="latest-record-status" class="status-pill status-registered">No record</span>
             </div>
