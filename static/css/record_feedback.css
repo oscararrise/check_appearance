@@ -1,28 +1,41 @@
 /* Last-record context and save feedback */
 .latest-record-panel {
-    margin: 18px 0 20px;
-    padding: 16px;
-    border: 1px solid rgba(53,16,106,.10);
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(244,238,252,.68), rgba(255,255,255,.82));
+    margin: 12px;
+    padding: 22px 24px 24px;
+    border: 1px solid #bfd3f4;
+    border-radius: 17px;
+    background: linear-gradient(180deg, #f6f9ff 0%, #fff 48%);
+    box-shadow: inset 4px 0 0 #3f72c8;
 }
 
 .latest-record-heading {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 14px;
+}
+
+.latest-record-title {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+}
+
+.latest-record-icon {
+    background: #e8f0fd !important;
+    color: #285ea8 !important;
 }
 
 .latest-record-heading h3 {
     margin: 0;
     color: #1c0f38;
-    font-size: 16px;
+    font-size: 17px;
     letter-spacing: -.015em;
 }
 
 .latest-record-content {
-    margin-top: 12px;
+    margin-top: 14px;
 }
 
 .latest-record-facts {
@@ -33,17 +46,17 @@
 
 .latest-record-facts > div {
     min-width: 0;
-    padding: 10px 11px;
-    border: 1px solid rgba(74,52,112,.08);
+    padding: 12px 14px;
+    border: 1px solid #d0def5;
     border-radius: 12px;
-    background: rgba(255,255,255,.86);
+    background: #e8f0fd;
 }
 
 .latest-record-facts span,
 .latest-record-comment > span {
     display: block;
     margin-bottom: 4px;
-    color: #7d7689;
+    color: #5074a8;
     font-size: 9px;
     font-weight: 850;
     letter-spacing: .07em;
@@ -53,7 +66,7 @@
 .latest-record-facts strong {
     display: block;
     overflow: hidden;
-    color: #1a1424;
+    color: #1f3f6e;
     font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -61,15 +74,15 @@
 
 .latest-record-comment {
     margin-top: 9px;
-    padding: 10px 12px;
-    border: 1px solid rgba(74,52,112,.08);
+    padding: 12px 14px;
+    border: 1px solid #d0def5;
     border-radius: 12px;
-    background: rgba(255,255,255,.74);
+    background: #e8f0fd;
 }
 
 .latest-record-comment p {
     margin: 0;
-    color: #514b5b;
+    color: #355b8e;
     font-size: 12px;
     line-height: 1.45;
 }
@@ -79,21 +92,21 @@
     align-items: center;
     gap: 10px;
     min-height: 54px;
-    padding: 10px 12px;
-    border: 1px dashed #d8d0e2;
-    border-radius: 13px;
-    background: rgba(255,255,255,.58);
+    padding: 13px 14px;
+    border: 1px solid #d0def5;
+    border-radius: 12px;
+    background: #e8f0fd;
 }
 
 .latest-record-empty-icon {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     display: grid;
     place-items: center;
     flex: 0 0 auto;
-    border-radius: 50%;
-    background: #f1edf6;
-    color: #7d7689;
+    border-radius: 10px;
+    background: #dce8fb;
+    color: #285ea8;
 }
 
 .latest-record-empty > div {
@@ -102,18 +115,18 @@
 }
 
 .latest-record-empty strong {
-    color: #3a3344;
+    color: #1f3f6e;
     font-size: 12px;
 }
 
 .latest-record-empty small {
-    color: #7d7689;
+    color: #5074a8;
     font-size: 11px;
 }
 
 .status-neutral {
-    background: #f1eef4;
-    color: #6b6475;
+    background: #e8f0fd;
+    color: #285ea8;
 }
 
 .record-saved-toast {
