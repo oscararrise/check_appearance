@@ -449,3 +449,138 @@
         font-size: 11px;
     }
 }
+
+
+/* --------------------------------------------------------------------------
+   Late arrival selector: operational two-state control aligned with decisions.
+   -------------------------------------------------------------------------- */
+.late-selector {
+    margin: 2px 0 0;
+    padding: 14px 16px;
+    border: 1px solid rgba(53,16,106,.09);
+    border-radius: 16px;
+    background: rgba(255,255,255,.72);
+}
+
+.late-selector-copy > span {
+    color: var(--color-ink);
+    font-size: 12px;
+    font-weight: 820;
+}
+
+.late-selector-copy small {
+    margin-top: 3px;
+    color: var(--color-text-tertiary);
+    font-size: 10px;
+    font-weight: 620;
+}
+
+.late-options {
+    min-width: 300px;
+    grid-template-columns: repeat(2, minmax(138px, 1fr));
+    gap: 10px;
+}
+
+.late-btn {
+    min-height: 58px;
+    padding: 9px 13px;
+    justify-content: flex-start;
+    gap: 10px;
+    border: 1px solid rgba(53,16,106,.11);
+    border-radius: 13px;
+    background: #fbfafc;
+    color: #655b70;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.012);
+    text-align: left;
+    transition:
+        transform .16s ease,
+        background .16s ease,
+        border-color .16s ease,
+        box-shadow .16s ease,
+        color .16s ease;
+}
+
+.late-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(53,16,106,.22);
+    background: #ffffff;
+}
+
+.late-choice-icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid rgba(53,16,106,.08);
+    color: #776d82;
+    font-size: 14px;
+    font-weight: 900;
+    box-shadow: 0 4px 12px rgba(32,14,52,.05);
+}
+
+.late-btn-copy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.late-btn-copy strong {
+    font-size: 13px;
+    line-height: 1.1;
+}
+
+.late-btn-copy small {
+    color: inherit;
+    font-size: 9.5px;
+    font-weight: 650;
+    opacity: .72;
+}
+
+/* Yes = warning state */
+.late-btn-yes.active {
+    color: #9c5b00;
+    background: #fff2cf;
+    border-color: #e9be58;
+    box-shadow: 0 0 0 4px rgba(156,91,0,.09), 0 10px 22px rgba(156,91,0,.08);
+    transform: translateY(-1px);
+}
+
+.late-btn-yes.active .late-choice-icon {
+    color: #a35d00;
+    border-color: #f0d38b;
+    background: #ffffff;
+}
+
+/* No = positive/on-time state */
+.late-btn-no.active {
+    color: #08783f;
+    background: #e2f7ea;
+    border-color: #8fd3aa;
+    box-shadow: 0 0 0 4px rgba(8,120,63,.09), 0 10px 22px rgba(8,120,63,.08);
+    transform: translateY(-1px);
+}
+
+.late-btn-no.active .late-choice-icon {
+    color: #08783f;
+    border-color: #bde8cc;
+    background: #ffffff;
+}
+
+.late-btn[aria-pressed="true"] {
+    font-weight: 760;
+}
+
+@media (max-width: 720px) {
+    .late-options {
+        min-width: 0;
+        width: 100%;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .late-btn {
+        min-width: 0;
+    }
+}
