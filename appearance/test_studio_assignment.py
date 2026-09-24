@@ -56,3 +56,82 @@ class StudioAssignmentParserTests(SimpleTestCase):
         result = parse_studio_assignment(payload, "48444", "Johan Valderrama")
 
         self.assertFalse(result["found"])
+
+
+    def test_supports_dynamic_excel_column_names(self):
+        payload = {
+            "hibob_id": "47827",
+            "table_found": "Table2",
+            "data": [
+                {
+                    "ID": "ID",
+                    "7_x002e_1 Spanish (LIVE) Generic": "7.3 Portuguese (LIVE) Generic (NO VISIBLE TATTOOS)",
+                    "TEAM": "TEAM",
+                    "Appereance Check": "Appereance Check",
+                    "Not Ready/Declined": "Not Ready/Declined",
+                    "Comment": "Comment",
+                    "Comment Update (Final Check)": "Comment",
+                    "Tattoo policy": "Tattoo policy",
+                },
+                {
+                    "ID": "46332",
+                    "7_x002e_1 Spanish (LIVE) Generic": "Hernan Tello BJ/SP BJ/FBJ",
+                    "TEAM": "",
+                    "Appereance Check": "",
+                    "Not Ready/Declined": "",
+                    "Comment": "",
+                    "Comment Update (Final Check)": "",
+                    "Tattoo policy": "",
+                },
+                {
+                    "ID": "47827",
+                    "7_x002e_1 Spanish (LIVE) Generic": "Sara Espitia Alonso BJ/SP BJ/SPEED BR/RW",
+                    "TEAM": "",
+                    "Appereance Check": "",
+                    "Not Ready/Declined": "",
+                    "Comment": "",
+                    "Comment Update (Final Check)": "",
+                    "Tattoo policy": "YES",
+                },
+            ],
+        }
+
+        result = parse_studio_assignment(
+            payload,
+            "47827",
+            "Sara Espitia Alonso",
+        )
+
+        self.assertTrue(result["found"])
+        self.assertEqual(result["studio"], "7.3")
+        self.assertEqual(result["assignment_type"], "Generic")
+        self.assertEqual(result["game"], "BJ/SP BJ/SPEED BR/RW")
+        self.assertEqual(
+            result["studio_title"],
+            "7.3 Portuguese (LIVE) Generic (NO VISIBLE TATTOOS)",
+        )
+
+    def test_uses_dynamic_column_header_for_first_studio_section(self):
+        payload = {
+            "hibob_id": "99999",
+            "table_found": "Table2",
+            "data": [
+                {
+                    "ID": "99999",
+                    "7_x002e_1 Spanish (LIVE) Generic": "Test User BJ/SP BJ/FBJ",
+                    "TEAM": "",
+                    "Appereance Check": "",
+                    "Not Ready/Declined": "",
+                    "Comment": "",
+                    "Comment Update (Final Check)": "",
+                    "Tattoo policy": "",
+                },
+            ],
+        }
+
+        result = parse_studio_assignment(payload, "99999", "Test User")
+
+        self.assertTrue(result["found"])
+        self.assertEqual(result["studio"], "7.1")
+        self.assertEqual(result["assignment_type"], "Generic")
+        self.assertEqual(result["game"], "BJ/SP BJ/FBJ")
