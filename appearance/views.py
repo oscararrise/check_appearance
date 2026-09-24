@@ -62,7 +62,7 @@ def _operational_record_payload(record, process):
     late_marked_at = ""
     late_label = ""
     if is_check:
-        late_label = "Yes" if record.is_late is True else "No" if record.is_late is False else "Not recorded"
+        late_label = "Late" if record.is_late is True else "On time" if record.is_late is False else "Not recorded"
         if record.late_marked_at:
             late_marked_at = timezone.localtime(record.late_marked_at).strftime("%H:%M:%S")
 
@@ -432,7 +432,7 @@ def export_report(request):
                 local_time.strftime("%H:%M:%S"),
                 item.get_shift_display(),
                 item.get_status_display(),
-                "Yes" if item.is_late is True else "No" if item.is_late is False else "Not recorded",
+                "Late" if item.is_late is True else "On time" if item.is_late is False else "Not recorded",
                 timezone.localtime(item.late_marked_at).strftime("%H:%M:%S") if item.late_marked_at else "",
                 item.comment,
                 item.recorded_by.get_username(),
