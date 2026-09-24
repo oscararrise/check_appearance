@@ -18,6 +18,7 @@
     const scheduleMessage = document.getElementById('schedule-message');
     let currentEmployee = null;
     let selectedStatus = null;
+    let selectedLate = null;
     let saveToastTimer = null;
 
     const csrfToken = () => {
@@ -112,6 +113,7 @@
                 <div><span>Date</span><strong>${escapeHtml(record.recorded_date || '—')}</strong></div>
                 <div><span>Time</span><strong>${escapeHtml(record.recorded_at || '—')}</strong></div>
                 <div><span>Shift</span><strong>${escapeHtml(record.shift || '—')}</strong></div>
+                ${record.process === 'CHECK' ? `<div><span>Late</span><strong>${escapeHtml(record.late_label || 'Not recorded')}${record.late_marked_at ? ` · ${escapeHtml(record.late_marked_at)}` : ''}</strong></div>` : ''}
                 <div><span>Recorded by</span><strong>${escapeHtml(record.recorded_by || '—')}</strong></div>
             </div>
             ${commentHtml}
@@ -292,6 +294,13 @@
         const row = document.createElement('tr');
         const status = isCheck ? record.status : 'Registered';
         const comments = isCheck && record.comment ? record.comment : '—';
+        const late = isCheck
+            ? (record.is_late === true
+                ? `<span class="late-pill late-yes">Yes${record.late_marked_at ? ` · ${escapeHtml(record.late_marked_at)}` : ''}</span>`
+                : record.is_late === false
+                    ? '<span class="late-pill late-no">No</span>'
+                    : '<span class="late-pill late-unknown">—</span>')
+            : '—';
 
         row.innerHTML = `
             <td class="history-datetime"><strong>${escapeHtml(record.recorded_date)}</strong><span>${escapeHtml(record.recorded_at)}</span></td>
@@ -299,6 +308,7 @@
             <td class="history-role">${escapeHtml(record.role || '—')}</td>
             <td><span class="shift-pill shift-${shiftClass(record.shift)}">${escapeHtml(record.shift || '—')}</span></td>
             <td><span class="status-pill status-${statusClass(status)}">${escapeHtml(status)}</span></td>
+            <td class="history-late">${late}</td>
             <td class="history-comment"><span>${escapeHtml(comments)}</span></td>
             <td><span class="recorded-by">${escapeHtml(record.recorded_by || '—')}</span></td>
         `;
@@ -307,11 +317,20 @@
         while (tableBody.children.length > 500) tableBody.lastElementChild.remove();
     };
 
+    const updateSaveCheckState = () => {
+        if (saveCheck) saveCheck.disabled = !(currentEmployee && selectedStatus && selectedLate !== null);
+    };
+
     const resetCheckSelection = () => {
         selectedStatus = null;
+        selectedLate = null;
         document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.late-btn').forEach((btn) => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-pressed', 'false');
+        });
         if (comment) comment.value = '';
-        if (saveCheck) saveCheck.disabled = true;
+        updateSaveCheckState();
     };
 
     const setScheduleEditing = (editing) => {
@@ -408,7 +427,19 @@
             selectedStatus = button.dataset.status;
             document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            saveCheck.disabled = false;
+            updateSaveCheckState();
+        });
+    });
+
+    document.querySelectorAll('.late-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+            selectedLate = button.dataset.late === 'true';
+            document.querySelectorAll('.late-btn').forEach((btn) => {
+                const active = btn === button;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+            updateSaveCheckState();
         });
     });
 
@@ -419,6 +450,7 @@
             const saved = await postJson(shell.dataset.checkUrl, {
                 employee_id: currentEmployee.employee_id,
                 status: selectedStatus,
+                late: selectedLate,
                 comment: comment.value.trim(),
             });
             prependHistory(saved.record, true);

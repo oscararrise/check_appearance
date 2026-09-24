@@ -197,6 +197,16 @@
                         <button type="button" class="status-btn warning" data-status="NOT_READY"><span class="status-choice-icon">!</span><span><strong>Not Ready</strong><small>Correction is required</small></span></button>
                         <button type="button" class="status-btn declined" data-status="DECLINED"><span class="status-choice-icon">×</span><span><strong>Declined</strong><small>Employee cannot proceed</small></span></button>
                     </div>
+                    <div class="late-selector" role="group" aria-labelledby="late-selector-label">
+                        <div class="late-selector-copy">
+                            <span id="late-selector-label">Late arrival</span>
+                            <small>Required · mark whether the employee arrived late</small>
+                        </div>
+                        <div class="late-options">
+                            <button type="button" class="late-btn" data-late="true" aria-pressed="false"><span class="late-choice-icon">✓</span><strong>Yes</strong></button>
+                            <button type="button" class="late-btn" data-late="false" aria-pressed="false"><span class="late-choice-icon">×</span><strong>No</strong></button>
+                        </div>
+                    </div>
                     <label class="field comment-field">
                         <span>Operational comment <small>Optional unless context is needed</small></span>
                         <textarea id="check-comment" rows="3" maxlength="500" placeholder="Add a short, clear note for the operations history…"></textarea>
@@ -269,6 +279,7 @@
                             <th>Role</th>
                             <th>Shift</th>
                             <th>Status</th>
+                            <th>Late</th>
                             <th>Comments</th>
                             <th>Recorded by</th>
                         </tr>
@@ -292,11 +303,18 @@
                                 <span class="status-pill status-registered">Registered</span>
                                 {% endif %}
                             </td>
+                            <td class="history-late">
+                                {% if process == "CHECK" %}
+                                    {% if item.is_late is True %}<span class="late-pill late-yes">Yes{% if item.late_marked_at %} · {{ item.late_marked_at|date:"H:i:s" }}{% endif %}</span>
+                                    {% elif item.is_late is False %}<span class="late-pill late-no">No</span>
+                                    {% else %}<span class="late-pill late-unknown">—</span>{% endif %}
+                                {% else %}—{% endif %}
+                            </td>
                             <td class="history-comment"><span>{% if process == "CHECK" %}{{ item.comment|default:"—" }}{% else %}—{% endif %}</span></td>
                             <td><span class="recorded-by">{{ item.recorded_by.get_username }}</span></td>
                         </tr>
                         {% empty %}
-                        <tr id="empty-history"><td colspan="7" class="history-empty"><div class="empty-state"><span>○</span><p>No records match these filters.</p></div></td></tr>
+                        <tr id="empty-history"><td colspan="8" class="history-empty"><div class="empty-state"><span>○</span><p>No records match these filters.</p></div></td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

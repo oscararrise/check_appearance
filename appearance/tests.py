@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from .models import AppearanceCheck, PowerAutomateDelivery
 from .power_automate import build_appearance_check_payload, publish_appearance_check
@@ -20,6 +21,8 @@ class PowerAutomateIntegrationTests(TestCase):
             role="Game Presenter",
             shift="AFTERNOON",
             status=AppearanceCheck.Status.NOT_READY,
+            is_late=True,
+            late_marked_at=timezone.now(),
             comment="Hair correction required.",
             recorded_by=self.user,
         )
@@ -33,6 +36,10 @@ class PowerAutomateIntegrationTests(TestCase):
         self.assertFalse(payload["is_ready"])
         self.assertEqual(payload["not_ready_declined"], "Not Ready")
         self.assertEqual(payload["comment"], "Hair correction required.")
+        self.assertTrue(payload["late"])
+        self.assertEqual(payload["late_label"], "Yes")
+        self.assertTrue(payload["late_marked_at"])
+        self.assertTrue(payload["late_marked_time"])
         self.assertEqual(payload["fs_input"], "")
         self.assertEqual(payload["comment_update_final_check"], "")
 
@@ -67,3 +74,37 @@ class PowerAutomateIntegrationTests(TestCase):
         sent_payload = json.loads(request.data.decode("utf-8"))
         self.assertEqual(sent_payload["employee_id"], "49105")
         self.assertEqual(sent_payload["not_ready_declined"], "Not Ready")
+
+
+class AppearanceCheckLateFieldTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="late-operator", password="test-password")
+
+    def test_late_yes_keeps_audit_timestamp(self):
+        marked_at = timezone.now()
+        check = AppearanceCheck.objects.create(
+            employee_id="10001",
+            employee_name="Late Employee",
+            role="Game Presenter",
+            shift="MORNING",
+            status=AppearanceCheck.Status.READY,
+            is_late=True,
+            late_marked_at=marked_at,
+            recorded_by=self.user,
+        )
+        self.assertTrue(check.is_late)
+        self.assertEqual(check.late_marked_at, marked_at)
+
+    def test_late_no_has_no_late_timestamp(self):
+        check = AppearanceCheck.objects.create(
+            employee_id="10002",
+            employee_name="On Time Employee",
+            role="Game Presenter",
+            shift="MORNING",
+            status=AppearanceCheck.Status.READY,
+            is_late=False,
+            late_marked_at=None,
+            recorded_by=self.user,
+        )
+        self.assertFalse(check.is_late)
+        self.assertIsNone(check.late_marked_at)

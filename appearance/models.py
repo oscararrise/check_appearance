@@ -277,6 +277,8 @@ class AppearanceCheck(OperationalRecord):
         DECLINED = "DECLINED", "Declined"
 
     status = models.CharField(max_length=20, choices=Status.choices)
+    is_late = models.BooleanField(blank=True, null=True, db_index=True)
+    late_marked_at = models.DateTimeField(blank=True, null=True)
     comment = models.CharField(max_length=500, blank=True)
 
     class Meta:

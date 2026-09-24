@@ -181,10 +181,10 @@ class PreparationScanAdmin(admin.ModelAdmin):
 
 @admin.register(AppearanceCheck)
 class AppearanceCheckAdmin(admin.ModelAdmin):
-    list_display = ("employee_id", "employee_name", "status", "shift", "recorded_at", "recorded_by")
-    list_filter = ("status", "shift", "recorded_at")
+    list_display = ("employee_id", "employee_name", "status", "is_late", "late_marked_at", "shift", "recorded_at", "recorded_by")
+    list_filter = ("status", "is_late", "shift", "recorded_at")
     search_fields = ("employee_id", "employee_name", "role", "comment")
-    readonly_fields = ("employee_id", "employee_name", "role", "shift", "status", "comment", "recorded_at", "recorded_by")
+    readonly_fields = ("employee_id", "employee_name", "role", "shift", "status", "is_late", "late_marked_at", "comment", "recorded_at", "recorded_by")
 
 
 @admin.register(PowerAutomateDelivery)

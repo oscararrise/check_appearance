@@ -59,6 +59,13 @@ def _operational_record_payload(record, process):
     if record is None:
         return None
     is_check = process == "CHECK"
+    late_marked_at = ""
+    late_label = ""
+    if is_check:
+        late_label = "Yes" if record.is_late is True else "No" if record.is_late is False else "Not recorded"
+        if record.late_marked_at:
+            late_marked_at = timezone.localtime(record.late_marked_at).strftime("%H:%M:%S")
+
     return {
         "id": record.id,
         "employee_id": record.employee_id,
@@ -67,6 +74,9 @@ def _operational_record_payload(record, process):
         "shift": record.get_shift_display(),
         "status": record.get_status_display() if is_check else "Registered",
         "comment": record.comment if is_check else "",
+        "is_late": record.is_late if is_check else None,
+        "late_label": late_label,
+        "late_marked_at": late_marked_at,
         "process": process,
         **_record_timestamp_payload(record),
     }
@@ -281,6 +291,10 @@ def record_check(request):
     if status not in allowed:
         return JsonResponse({"ok": False, "error": "Select Ready, Not Ready or Declined."}, status=400)
 
+    late_value = payload.get("late")
+    if not isinstance(late_value, bool):
+        return JsonResponse({"ok": False, "error": "Select whether the employee is late: Yes or No."}, status=400)
+
     comment = str(payload.get("comment", "")).strip()[:500]
     now = timezone.localtime()
     record = AppearanceCheck.objects.create(
@@ -289,6 +303,8 @@ def record_check(request):
         role=profile.role,
         shift=resolve_operational_shift(now),
         status=status,
+        is_late=late_value,
+        late_marked_at=timezone.now() if late_value else None,
         comment=comment,
         recorded_by=request.user,
     )
@@ -404,7 +420,7 @@ def export_report(request):
             ])
     else:
         ws.title = "Appearance Check"
-        ws.append(["Employee ID", "Name", "Role", "Date", "Time", "Shift", "Status", "Comment", "Recorded by"])
+        ws.append(["Employee ID", "Name", "Role", "Date", "Time", "Shift", "Status", "Late", "Late marked time", "Comment", "Recorded by"])
         records = AppearanceCheck.objects.filter(recorded_at__date=today).select_related("recorded_by")
         for item in records:
             local_time = timezone.localtime(item.recorded_at)
@@ -416,6 +432,8 @@ def export_report(request):
                 local_time.strftime("%H:%M:%S"),
                 item.get_shift_display(),
                 item.get_status_display(),
+                "Yes" if item.is_late is True else "No" if item.is_late is False else "Not recorded",
+                timezone.localtime(item.late_marked_at).strftime("%H:%M:%S") if item.late_marked_at else "",
                 item.comment,
                 item.recorded_by.get_username(),
             ])
