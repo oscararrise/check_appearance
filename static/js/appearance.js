@@ -296,9 +296,9 @@
         const comments = isCheck && record.comment ? record.comment : '—';
         const late = isCheck
             ? (record.is_late === true
-                ? `<span class="late-pill late-yes">Yes${record.late_marked_at ? ` · ${escapeHtml(record.late_marked_at)}` : ''}</span>`
+                ? `<span class="late-pill late-yes">Late${record.late_marked_at ? ` · ${escapeHtml(record.late_marked_at)}` : ''}</span>`
                 : record.is_late === false
-                    ? '<span class="late-pill late-no">No</span>'
+                    ? '<span class="late-pill late-no">On time</span>'
                     : '<span class="late-pill late-unknown">—</span>')
             : '—';
 
