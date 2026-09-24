@@ -203,8 +203,14 @@
                             <small>Required · mark whether the employee arrived late</small>
                         </div>
                         <div class="late-options">
-                            <button type="button" class="late-btn" data-late="true" aria-pressed="false"><span class="late-choice-icon">✓</span><strong>Yes</strong></button>
-                            <button type="button" class="late-btn" data-late="false" aria-pressed="false"><span class="late-choice-icon">×</span><strong>No</strong></button>
+                            <button type="button" class="late-btn late-btn-yes" data-late="true" aria-pressed="false">
+                                <span class="late-choice-icon">!</span>
+                                <span class="late-btn-copy"><strong>Yes</strong><small>Arrived late</small></span>
+                            </button>
+                            <button type="button" class="late-btn late-btn-no" data-late="false" aria-pressed="false">
+                                <span class="late-choice-icon">✓</span>
+                                <span class="late-btn-copy"><strong>No</strong><small>On time</small></span>
+                            </button>
                         </div>
                     </div>
                     <label class="field comment-field">
