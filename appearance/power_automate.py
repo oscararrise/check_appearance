@@ -35,7 +35,7 @@ def build_appearance_check_payload(check: AppearanceCheck) -> dict:
         "is_ready": check.status == AppearanceCheck.Status.READY,
         "not_ready_declined": not_ready_declined,
         "late": check.is_late,
-        "late_label": "Yes" if check.is_late is True else "No" if check.is_late is False else "Not recorded",
+        "late_label": "Late" if check.is_late is True else "On time" if check.is_late is False else "Not recorded",
         "late_marked_at": late_local_time.isoformat() if late_local_time else "",
         "late_marked_time": late_local_time.strftime("%H:%M:%S") if late_local_time else "",
         "fs_input": "",
