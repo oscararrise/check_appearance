@@ -135,3 +135,43 @@ class StudioAssignmentParserTests(SimpleTestCase):
         self.assertEqual(result["studio"], "7.1")
         self.assertEqual(result["assignment_type"], "Generic")
         self.assertEqual(result["game"], "BJ/SP BJ/FBJ")
+
+
+    def test_assignment_type_falls_back_to_dynamic_column_name(self):
+        payload = {
+            "hibob_id": "46228",
+            "table_found": "Table2",
+            "data": [
+                {
+                    "ID": "ID",
+                    "7_x002e_1 Spanish (LIVE) Generic": "7.10 Portuguese (LIVE)",
+                    "TEAM": "TEAM",
+                    "Appereance Check": "Appereance Check",
+                    "Not Ready/Declined": "Not Ready/Declined",
+                    "Comment": "Comment",
+                    "Comment Update (Final Check)": "Comment",
+                    "Tattoo policy": "Tattoo policy",
+                },
+                {
+                    "ID": "46228",
+                    "7_x002e_1 Spanish (LIVE) Generic": "Patricia Targino Romero BJ/TP/RW/VIP/MW",
+                    "TEAM": "",
+                    "Appereance Check": "",
+                    "Not Ready/Declined": "",
+                    "Comment": "",
+                    "Comment Update (Final Check)": "",
+                    "Tattoo policy": "",
+                },
+            ],
+        }
+
+        result = parse_studio_assignment(
+            payload,
+            "46228",
+            "Patricia Targino Romero",
+        )
+
+        self.assertTrue(result["found"])
+        self.assertEqual(result["studio"], "7.10")
+        self.assertEqual(result["assignment_type"], "Generic")
+        self.assertEqual(result["game"], "BJ/TP/RW/VIP/MW")
