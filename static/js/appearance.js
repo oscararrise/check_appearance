@@ -155,8 +155,8 @@
         container.innerHTML = `
             <div class="studio-assignment-summary">
                 <div class="studio-assignment-fact">
-                    <span>Assignment type</span>
-                    <strong>${escapeHtml(assignment.assignment_type || 'Not specified')}</strong>
+                    <span>Studio assignment type</span>
+                    <strong class="studio-assignment-type">${escapeHtml(assignment.assignment_type || 'Not specified')}</strong>
                 </div>
                 <div class="studio-assignment-fact">
                     <span>Studio</span>
