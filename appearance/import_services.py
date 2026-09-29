@@ -1,6 +1,7 @@
 import csv
 import hashlib
 import io
+import logging
 import re
 import unicodedata
 import zipfile
@@ -23,6 +24,9 @@ from .models import (
     TattooRecord,
 )
 from .services import normalize_employee_id
+
+
+logger = logging.getLogger(__name__)
 
 
 TATTOO_HEADER_ALIASES = {
@@ -724,11 +728,18 @@ def _create_or_skip_batch(path, detected, file_name, force):
     ), False
 
 
+def _safe_import_error(exc):
+    if isinstance(exc, ImportServiceError):
+        return str(exc)[:1000]
+    logger.exception("IMPORT_PROCESSING_ERROR type=%s", exc.__class__.__name__)
+    return "Unexpected import processing error."
+
+
 def _mark_batch_failed(batch, exc):
     batch.status = ImportBatch.Status.FAILED
     batch.finished_at = timezone.now()
     batch.save(update_fields=["status", "finished_at"])
-    _issue(batch, None, "", str(exc))
+    _issue(batch, None, "", _safe_import_error(exc))
 
 
 def import_workbook(path, source_type="AUTO", force=False, source_file_name=None):
@@ -776,7 +787,7 @@ def import_workbook(path, source_type="AUTO", force=False, source_file_name=None
             _mark_batch_failed(batch, exc)
             if isinstance(exc, ImportServiceError):
                 raise
-            raise ImportServiceError(str(exc)) from exc
+            raise ImportServiceError("Unexpected import processing error.") from exc
 
     if suffix not in SUPPORTED_EXCEL_SUFFIXES:
         raise ImportServiceError(
@@ -833,7 +844,7 @@ def import_workbook(path, source_type="AUTO", force=False, source_file_name=None
             _mark_batch_failed(batch, exc)
             if isinstance(exc, ImportServiceError):
                 raise
-            raise ImportServiceError(str(exc)) from exc
+            raise ImportServiceError("Unexpected import processing error.") from exc
     finally:
         workbook.close()
 
@@ -868,6 +879,6 @@ def process_data_upload(upload, force=False):
     except Exception as exc:
         upload.status = ImportBatch.Status.FAILED
         upload.processed_at = timezone.now()
-        upload.error_message = str(exc)
+        upload.error_message = _safe_import_error(exc)
         upload.save(update_fields=["status", "processed_at", "error_message"])
         raise
