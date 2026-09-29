@@ -38,8 +38,13 @@ ENVIRONMENT = os.getenv(
 IS_PRODUCTION = ENVIRONMENT == "production"
 
 _secret_key = os.getenv("DJANGO_SECRET_KEY", "").strip()
-if IS_PRODUCTION and (not _secret_key or _secret_key in {"change-me", "unsafe-development-key"}):
-    raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set to a strong unique value in production.")
+if IS_PRODUCTION and (
+    len(_secret_key) < 32
+    or _secret_key in {"change-me", "unsafe-development-key"}
+):
+    raise ImproperlyConfigured(
+        "DJANGO_SECRET_KEY must be a strong unique value of at least 32 characters in production."
+    )
 SECRET_KEY = _secret_key or "development-only-not-for-production"
 
 ALLOWED_HOSTS = _csv_env(
