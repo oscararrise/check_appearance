@@ -121,7 +121,7 @@
                     <span class="mode-badge"><span class="mode-dot"></span>Scanner ready</span>
                 </div>
 
-                <form id="scan-form" class="scan-row">
+                <form id="scan-form" class="scan-row scan-row-stacked">
                     {% csrf_token %}
                     <div class="lookup-mode-control" role="group" aria-label="Lookup mode">
                         <button type="button" class="btn btn-soft lookup-mode-btn active" data-lookup-mode="card" aria-pressed="true">Card</button>
@@ -129,6 +129,7 @@
                     </div>
                     <div class="scan-input-wrap">
                         <span class="scan-input-icon" aria-hidden="true">#</span>
+                        <span class="scan-field-label">CARD / EMPLOYEE NUMBER</span>
                         <input id="employee-id-input" class="scan-input" inputmode="numeric" autocomplete="off" placeholder="Scan card" aria-label="Card or Employee ID">
                     </div>
                     <button class="btn btn-primary btn-large scan-button action-button" type="submit">
