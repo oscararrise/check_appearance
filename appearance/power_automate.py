@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 def build_appearance_check_payload(check: AppearanceCheck) -> dict:
-    """Build the stable JSON contract consumed by the Power Automate flow."""
     local_time = timezone.localtime(check.recorded_at)
     status_label = check.get_status_display()
     not_ready_declined = (
@@ -20,13 +19,13 @@ def build_appearance_check_payload(check: AppearanceCheck) -> dict:
         if check.status in {AppearanceCheck.Status.NOT_READY, AppearanceCheck.Status.DECLINED}
         else ""
     )
-
     late_local_time = timezone.localtime(check.late_marked_at) if check.late_marked_at else None
 
     return {
         "event": "appearance_check.recorded",
         "event_version": 1,
         "record_id": check.pk,
+        "request_id": str(check.request_id),
         "employee_id": str(check.employee_id),
         "employee_name": check.employee_name,
         "role": check.role or "",
@@ -49,26 +48,26 @@ def build_appearance_check_payload(check: AppearanceCheck) -> dict:
     }
 
 
-def _safe_http_error_body(exc: HTTPError) -> str:
-    try:
-        body = exc.read(500).decode("utf-8", errors="replace").strip()
-    except Exception:
-        body = ""
-    return body
+def retry_delay_seconds(attempts):
+    delays = settings.POWER_AUTOMATE_RETRY_DELAYS_SECONDS
+    if not delays:
+        return 60
+    index = min(max(0, attempts - 1), len(delays) - 1)
+    return delays[index]
 
 
 def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAutomateDelivery:
-    """Attempt one webhook delivery and persist the result without raising to the UI."""
+    """Attempt one delivery. Persist only sanitized error codes, never remote bodies/URLs."""
     now = timezone.now()
     delivery.attempts += 1
     delivery.last_attempt_at = now
     delivery.response_status = None
     delivery.last_error = ""
 
-    flow_url = getattr(settings, "POWER_AUTOMATE_FLOW_URL", "").strip()
+    flow_url = settings.POWER_AUTOMATE_FLOW_URL.strip()
     if not flow_url:
         delivery.status = PowerAutomateDelivery.Status.FAILED
-        delivery.last_error = "POWER_AUTOMATE_FLOW_URL is not configured."
+        delivery.last_error = "CONFIG_MISSING_FLOW_URL"
         delivery.save()
         return delivery
 
@@ -77,9 +76,8 @@ def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAut
         "Accept": "application/json",
         "User-Agent": "ARRISE-Appearance/1.0",
     }
-    api_key = getattr(settings, "POWER_AUTOMATE_API_KEY", "").strip()
-    if api_key:
-        headers["X-ARRISE-API-Key"] = api_key
+    if settings.POWER_AUTOMATE_API_KEY:
+        headers["X-ARRISE-API-Key"] = settings.POWER_AUTOMATE_API_KEY
 
     request = Request(
         flow_url,
@@ -88,10 +86,8 @@ def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAut
         method="POST",
     )
 
-    timeout = max(1, int(getattr(settings, "POWER_AUTOMATE_TIMEOUT_SECONDS", 5)))
-
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with urlopen(request, timeout=settings.POWER_AUTOMATE_TIMEOUT_SECONDS) as response:
             response_status = response.getcode()
         delivery.response_status = response_status
         if 200 <= response_status < 300:
@@ -99,30 +95,28 @@ def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAut
             delivery.sent_at = now
         else:
             delivery.status = PowerAutomateDelivery.Status.FAILED
-            delivery.last_error = f"Power Automate returned HTTP {response_status}."
+            delivery.last_error = f"HTTP_{response_status}"
     except HTTPError as exc:
         delivery.response_status = exc.code
-        body = _safe_http_error_body(exc)
         delivery.status = PowerAutomateDelivery.Status.FAILED
-        delivery.last_error = f"HTTP {exc.code}" + (f": {body}" if body else "")
+        delivery.last_error = f"HTTP_{exc.code}"
     except (URLError, TimeoutError, OSError, ValueError) as exc:
         delivery.status = PowerAutomateDelivery.Status.FAILED
-        delivery.last_error = str(exc)[:1000]
+        delivery.last_error = f"NETWORK_{exc.__class__.__name__}"
 
     delivery.save()
 
     if delivery.status == PowerAutomateDelivery.Status.FAILED:
         logger.warning(
-            "Power Automate delivery failed for AppearanceCheck %s: %s",
+            "POWER_AUTOMATE_DELIVERY_FAILED check_id=%s attempts=%s code=%s",
             delivery.appearance_check_id,
+            delivery.attempts,
             delivery.last_error,
         )
-
     return delivery
 
 
 def publish_appearance_check(check: AppearanceCheck) -> PowerAutomateDelivery:
-    """Create/update the audit record and deliver a newly saved Appearance Check."""
     payload = build_appearance_check_payload(check)
     delivery, _ = PowerAutomateDelivery.objects.get_or_create(
         appearance_check=check,
@@ -130,7 +124,7 @@ def publish_appearance_check(check: AppearanceCheck) -> PowerAutomateDelivery:
     )
     delivery.payload = payload
 
-    if not getattr(settings, "POWER_AUTOMATE_ENABLED", False):
+    if not settings.POWER_AUTOMATE_ENABLED:
         delivery.status = PowerAutomateDelivery.Status.DISABLED
         delivery.last_error = ""
         delivery.save()
