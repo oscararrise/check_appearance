@@ -35,6 +35,13 @@ def _normalise_key(value) -> str:
     return _clean(value).casefold()
 
 
+def _normalise_employee_id(value) -> str:
+    value = _clean(value)
+    if value.endswith(".0") and value[:-2].isdigit():
+        return value[:-2]
+    return value
+
+
 def _masked_employee_id(value):
     value = _clean(value)
     if len(value) <= 4:
@@ -56,11 +63,11 @@ def _decode_excel_column_name(value: str) -> str:
 
 def _row_id(row: dict) -> str:
     if "Column1" in row:
-        return _clean(row.get("Column1"))
+        return _normalise_employee_id(row.get("Column1"))
 
     for key, value in row.items():
         if _normalise_key(key) == "id":
-            return _clean(value)
+            return _normalise_employee_id(value)
 
     return ""
 
@@ -150,7 +157,7 @@ def parse_studio_assignment(payload: dict, employee_id: str, employee_name: str 
         )
 
     rows = payload["data"]
-    target = _clean(employee_id)
+    target = _normalise_employee_id(employee_id)
     text_key = _infer_text_key(rows)
     employee_index = None
 
@@ -160,10 +167,25 @@ def parse_studio_assignment(payload: dict, employee_id: str, employee_name: str 
             break
 
     if employee_index is None:
+        source_table = _clean(payload.get("table_found"))
+        if not source_table:
+            return _result(
+                INVALID_RESPONSE,
+                code="WORKFORCE_INVALID_RESPONSE",
+                message="Workforce did not confirm which assignment dataset was checked.",
+            )
         return _result(
             NOT_FOUND,
             code="WORKFORCE_EMPLOYEE_NOT_FOUND",
             message="This employee is not present in the current Workforce assignment list.",
+            source_table=source_table,
+        )
+
+    if not text_key:
+        return _result(
+            INVALID_RESPONSE,
+            code="WORKFORCE_INVALID_RESPONSE",
+            message="Workforce returned an incomplete assignment dataset.",
             source_table=payload.get("table_found"),
         )
 
