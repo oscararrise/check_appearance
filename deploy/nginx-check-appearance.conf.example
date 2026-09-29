@@ -37,7 +37,16 @@ server {
     }
 
     location = /login/ {
-        limit_req zone=appearance_login burst=3 nodelay;
+        limit_req zone=appearance_login burst=10 nodelay;
+        proxy_pass http://check_appearance_gunicorn;
+        include proxy_params;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Request-ID $request_id;
+    }
+
+    location = /admin/login/ {
+        limit_req zone=appearance_login burst=10 nodelay;
         proxy_pass http://check_appearance_gunicorn;
         include proxy_params;
         proxy_set_header Host $host;
