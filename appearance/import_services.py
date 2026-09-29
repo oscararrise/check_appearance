@@ -1,11 +1,14 @@
 import csv
 import hashlib
 import io
+import logging
 import re
 import unicodedata
+import zipfile
 from datetime import date, datetime
 from pathlib import Path
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from openpyxl import load_workbook
@@ -21,6 +24,9 @@ from .models import (
     TattooRecord,
 )
 from .services import normalize_employee_id
+
+
+logger = logging.getLogger(__name__)
 
 
 TATTOO_HEADER_ALIASES = {
@@ -672,7 +678,12 @@ def _read_csv_file(path):
     except csv.Error:
         dialect = csv.excel
 
-    return list(csv.reader(io.StringIO(text), dialect))
+    rows = list(csv.reader(io.StringIO(text), dialect))
+    if len(rows) > settings.APPEARANCE_MAX_UPLOAD_ROWS:
+        raise ImportServiceError(
+            f"CSV exceeds the maximum supported row count ({settings.APPEARANCE_MAX_UPLOAD_ROWS})."
+        )
+    return rows
 
 
 def _import_security_csv(path, batch, source_file):
@@ -717,11 +728,18 @@ def _create_or_skip_batch(path, detected, file_name, force):
     ), False
 
 
+def _safe_import_error(exc):
+    if isinstance(exc, ImportServiceError):
+        return str(exc)[:1000]
+    logger.exception("IMPORT_PROCESSING_ERROR type=%s", exc.__class__.__name__)
+    return "Unexpected import processing error."
+
+
 def _mark_batch_failed(batch, exc):
     batch.status = ImportBatch.Status.FAILED
     batch.finished_at = timezone.now()
     batch.save(update_fields=["status", "finished_at"])
-    _issue(batch, None, "", str(exc))
+    _issue(batch, None, "", _safe_import_error(exc))
 
 
 def import_workbook(path, source_type="AUTO", force=False, source_file_name=None):
@@ -733,6 +751,9 @@ def import_workbook(path, source_type="AUTO", force=False, source_file_name=None
     path = Path(path)
     if not path.exists():
         raise ImportServiceError(f"File not found: {path}")
+    if path.stat().st_size > settings.APPEARANCE_MAX_UPLOAD_BYTES:
+        max_mb = settings.APPEARANCE_MAX_UPLOAD_BYTES // (1024 * 1024)
+        raise ImportServiceError(f"File exceeds the {max_mb} MB upload limit.")
 
     requested = (source_type or "AUTO").upper()
     file_name = source_file_name or path.name
@@ -766,7 +787,7 @@ def import_workbook(path, source_type="AUTO", force=False, source_file_name=None
             _mark_batch_failed(batch, exc)
             if isinstance(exc, ImportServiceError):
                 raise
-            raise ImportServiceError(str(exc)) from exc
+            raise ImportServiceError("Unexpected import processing error.") from exc
 
     if suffix not in SUPPORTED_EXCEL_SUFFIXES:
         raise ImportServiceError(
@@ -774,9 +795,28 @@ def import_workbook(path, source_type="AUTO", force=False, source_file_name=None
         )
 
     try:
+        with zipfile.ZipFile(path) as archive:
+            uncompressed_size = sum(item.file_size for item in archive.infolist())
+            if uncompressed_size > settings.APPEARANCE_MAX_UNCOMPRESSED_UPLOAD_BYTES:
+                raise ImportServiceError(
+                    "Excel file expands beyond the configured safe processing limit."
+                )
+    except zipfile.BadZipFile as exc:
+        raise ImportServiceError("Excel file is not a valid Office Open XML workbook.") from exc
+
+    try:
         workbook = load_workbook(path, data_only=True, read_only=True)
+    except ImportServiceError:
+        raise
     except Exception as exc:
-        raise ImportServiceError(f"Excel file could not be opened: {exc}") from exc
+        raise ImportServiceError("Excel file could not be opened safely.") from exc
+
+    for sheet in workbook.worksheets:
+        if sheet.max_row and sheet.max_row > settings.APPEARANCE_MAX_UPLOAD_ROWS:
+            workbook.close()
+            raise ImportServiceError(
+                f"Worksheet exceeds the maximum supported row count ({settings.APPEARANCE_MAX_UPLOAD_ROWS})."
+            )
 
     try:
         if requested == DataUpload.SourceType.AUTO:
@@ -804,7 +844,7 @@ def import_workbook(path, source_type="AUTO", force=False, source_file_name=None
             _mark_batch_failed(batch, exc)
             if isinstance(exc, ImportServiceError):
                 raise
-            raise ImportServiceError(str(exc)) from exc
+            raise ImportServiceError("Unexpected import processing error.") from exc
     finally:
         workbook.close()
 
@@ -839,6 +879,6 @@ def process_data_upload(upload, force=False):
     except Exception as exc:
         upload.status = ImportBatch.Status.FAILED
         upload.processed_at = timezone.now()
-        upload.error_message = str(exc)
+        upload.error_message = _safe_import_error(exc)
         upload.save(update_fields=["status", "processed_at", "error_message"])
         raise

@@ -1,10 +1,11 @@
 import json
 import logging
+import uuid
 from datetime import datetime, time
 from io import BytesIO
 
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
+from django.db import connections, transaction
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -43,9 +44,41 @@ SHIFT_ORDER = ("MORNING", "AFTERNOON", "NIGHT")
 
 def _json_body(request):
     try:
-        return json.loads(request.body.decode("utf-8"))
+        payload = json.loads(request.body.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError):
-        return {}
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _api_error(code, message, status=400, retryable=False):
+    return JsonResponse(
+        {
+            "ok": False,
+            "error": message,
+            "error_code": code,
+            "retryable": retryable,
+        },
+        status=status,
+    )
+
+
+def _request_uuid(value):
+    if value in {None, ""}:
+        return uuid.uuid4()
+    try:
+        return uuid.UUID(str(value))
+    except (TypeError, ValueError, AttributeError):
+        return None
+
+
+def _is_supervisor(user):
+    return bool(
+        user.is_authenticated
+        and (
+            user.is_staff
+            or user.groups.filter(name="Appearance Supervisors").exists()
+        )
+    )
 
 
 def _record_timestamp_payload(record):
@@ -226,6 +259,7 @@ def workspace(request, process):
             ),
             "status_options": status_options,
             "schedule_rows": _schedule_rows(process),
+            "can_export": _is_supervisor(request.user),
         },
     )
 
@@ -234,6 +268,9 @@ def workspace(request, process):
 @require_POST
 def lookup_employee(request):
     payload = _json_body(request)
+    if payload is None:
+        return _api_error("INVALID_JSON", "Request body must be valid JSON.", 400)
+
     lookup_mode = str(payload.get("lookup_mode", "employee_id")).strip().lower()
     employee_id = str(payload.get("employee_id", "")).strip()
     card_raw = str(payload.get("card_raw", "")).strip()
@@ -246,16 +283,27 @@ def lookup_employee(request):
         try:
             card_resolution = resolve_card(card_raw)
         except CardResolverError as exc:
-            return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+            return _api_error(exc.code, exc.message, exc.http_status, exc.retryable)
         employee_id = card_resolution.employee_id
     elif lookup_mode != "employee_id":
-        return JsonResponse({"ok": False, "error": "Invalid lookup mode."}, status=400)
+        return _api_error("INVALID_LOOKUP_MODE", "Invalid lookup mode.", 400)
+
+    if not employee_id or len(employee_id) > 50:
+        return _api_error("INVALID_EMPLOYEE_ID", "Enter a valid Employee ID.", 422)
 
     profile = get_employee_profile(employee_id)
     if profile is None:
-        return JsonResponse(
-            {"ok": False, "error": "Employee ID was not found in HiBob."},
-            status=404,
+        if card_resolution:
+            logger.warning("CARD_HIBOB_MAPPING_MISMATCH employee_id_suffix=%s", employee_id[-4:])
+            return _api_error(
+                "CARD_HIBOB_MAPPING_MISMATCH",
+                f"The card was recognized, but Employee ID {employee_id} is not present in the current HiBob dataset.",
+                409,
+            )
+        return _api_error(
+            "HIBOB_EMPLOYEE_NOT_FOUND",
+            "Employee ID was not found in HiBob.",
+            404,
         )
 
     studio_assignment = fetch_studio_assignment(
@@ -282,53 +330,133 @@ def lookup_employee(request):
 
 @login_required
 @require_POST
+def retry_studio_assignment(request):
+    payload = _json_body(request)
+    if payload is None:
+        return _api_error("INVALID_JSON", "Request body must be valid JSON.", 400)
+
+    employee_id = str(payload.get("employee_id", "")).strip()
+    profile = get_employee_profile(employee_id)
+    if profile is None:
+        return _api_error(
+            "HIBOB_EMPLOYEE_NOT_FOUND",
+            "Employee ID was not found in HiBob.",
+            404,
+        )
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "studio_assignment": fetch_studio_assignment(
+                profile.employee_id,
+                profile.full_name,
+            ),
+        }
+    )
+
+
+@login_required
+@require_POST
 def record_preparation(request):
     payload = _json_body(request)
+    if payload is None:
+        return _api_error("INVALID_JSON", "Request body must be valid JSON.", 400)
+
     profile = get_employee_profile(payload.get("employee_id"))
     if profile is None:
-        return JsonResponse({"ok": False, "error": "Employee ID was not found in HiBob."}, status=404)
+        return _api_error("HIBOB_EMPLOYEE_NOT_FOUND", "Employee ID was not found in HiBob.", 404)
+
+    request_id = _request_uuid(payload.get("request_id"))
+    if request_id is None:
+        return _api_error("INVALID_REQUEST_ID", "Invalid request identifier.", 422)
 
     now = timezone.localtime()
-    record = PreparationScan.objects.create(
-        employee_id=profile.employee_id,
-        employee_name=profile.full_name,
-        role=profile.role,
-        shift=resolve_operational_shift(now),
-        recorded_by=request.user,
+    record, created = PreparationScan.objects.get_or_create(
+        request_id=request_id,
+        defaults={
+            "employee_id": profile.employee_id,
+            "employee_name": profile.full_name,
+            "role": profile.role,
+            "shift": resolve_operational_shift(now),
+            "recorded_by": request.user,
+        },
     )
-    return JsonResponse({"ok": True, "record": _operational_record_payload(record, "PREPARATION")})
+
+    if not created and record.employee_id != profile.employee_id:
+        return _api_error(
+            "IDEMPOTENCY_CONFLICT",
+            "This request identifier was already used for another operation.",
+            409,
+        )
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "record": _operational_record_payload(record, "PREPARATION"),
+            "idempotent_replay": not created,
+        }
+    )
 
 
 @login_required
 @require_POST
 def record_check(request):
     payload = _json_body(request)
+    if payload is None:
+        return _api_error("INVALID_JSON", "Request body must be valid JSON.", 400)
+
     profile = get_employee_profile(payload.get("employee_id"))
     if profile is None:
-        return JsonResponse({"ok": False, "error": "Employee ID was not found in HiBob."}, status=404)
+        return _api_error("HIBOB_EMPLOYEE_NOT_FOUND", "Employee ID was not found in HiBob.", 404)
 
     status = str(payload.get("status", "")).upper()
     allowed = {choice for choice, _ in AppearanceCheck.Status.choices}
     if status not in allowed:
-        return JsonResponse({"ok": False, "error": "Select Ready, Not Ready or Declined."}, status=400)
+        return _api_error("INVALID_STATUS", "Select Ready, Not Ready or Declined.", 422)
 
     late_value = payload.get("late")
     if not isinstance(late_value, bool):
-        return JsonResponse({"ok": False, "error": "Select whether the employee is late: Yes or No."}, status=400)
+        return _api_error(
+            "INVALID_LATE_VALUE",
+            "Select whether the employee is late: Yes or No.",
+            422,
+        )
+
+    request_id = _request_uuid(payload.get("request_id"))
+    if request_id is None:
+        return _api_error("INVALID_REQUEST_ID", "Invalid request identifier.", 422)
 
     comment = str(payload.get("comment", "")).strip()[:500]
     now = timezone.localtime()
-    record = AppearanceCheck.objects.create(
-        employee_id=profile.employee_id,
-        employee_name=profile.full_name,
-        role=profile.role,
-        shift=resolve_operational_shift(now),
-        status=status,
-        is_late=late_value,
-        late_marked_at=timezone.now() if late_value else None,
-        comment=comment,
-        recorded_by=request.user,
+    defaults = {
+        "employee_id": profile.employee_id,
+        "employee_name": profile.full_name,
+        "role": profile.role,
+        "shift": resolve_operational_shift(now),
+        "status": status,
+        "is_late": late_value,
+        "late_marked_at": timezone.now() if late_value else None,
+        "comment": comment,
+        "recorded_by": request.user,
+    }
+    record, created = AppearanceCheck.objects.get_or_create(
+        request_id=request_id,
+        defaults=defaults,
     )
+
+    if not created:
+        same_request = (
+            record.employee_id == profile.employee_id
+            and record.status == status
+            and record.is_late == late_value
+            and record.comment == comment
+        )
+        if not same_request:
+            return _api_error(
+                "IDEMPOTENCY_CONFLICT",
+                "This request identifier was already used for another operation.",
+                409,
+            )
 
     automation = {"status": "ERROR", "sent": False}
     try:
@@ -339,15 +467,14 @@ def record_check(request):
             "attempts": delivery.attempts,
         }
     except Exception:
-        # The operational record is the source of truth. A downstream automation
-        # problem must never make the Appearance Check itself disappear.
-        logger.exception("Could not create/send Power Automate delivery for AppearanceCheck %s", record.pk)
+        logger.exception("POWER_AUTOMATE_PUBLISH_EXCEPTION check_id=%s", record.pk)
 
     return JsonResponse(
         {
             "ok": True,
             "record": _operational_record_payload(record, "CHECK"),
             "power_automate": automation,
+            "idempotent_replay": not created,
         }
     )
 
@@ -369,6 +496,8 @@ def update_schedule(request, process):
         return JsonResponse({"ok": False, "error": "Only administrators can update the operating schedule."}, status=403)
 
     payload = _json_body(request)
+    if payload is None:
+        return _api_error("INVALID_JSON", "Request body must be valid JSON.", 400)
     schedule = payload.get("schedule")
     if not isinstance(schedule, list):
         return JsonResponse({"ok": False, "error": "Schedule data is required."}, status=400)
@@ -418,6 +547,9 @@ def update_schedule(request, process):
 @login_required
 @require_GET
 def export_report(request):
+    if not _is_supervisor(request.user):
+        return HttpResponseForbidden("Supervisor access is required to export operational reports.")
+
     process = request.GET.get("process", "CHECK").upper()
     today = timezone.localdate()
 
@@ -474,3 +606,22 @@ def export_report(request):
     )
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+
+
+@require_GET
+def health_live(request):
+    return JsonResponse({"status": "ok"})
+
+
+@require_GET
+def health_ready(request):
+    try:
+        for alias in ("default", "hibob"):
+            with connections[alias].cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+    except Exception as exc:
+        logger.warning("HEALTH_READY_FAILED type=%s", exc.__class__.__name__)
+        return JsonResponse({"status": "not_ready"}, status=503)
+    return JsonResponse({"status": "ok"})

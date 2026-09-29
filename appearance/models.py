@@ -201,8 +201,23 @@ class DataUpload(models.Model):
     class Meta:
         ordering = ["-uploaded_at"]
 
+    def clean(self):
+        super().clean()
+        if not self.file:
+            return
+
+        suffix = Path(self.file.name).suffix.lower()
+        allowed = {".csv", ".xlsx", ".xlsm", ".xltx", ".xltm"}
+        if suffix not in allowed:
+            raise ValidationError({"file": "Unsupported file type."})
+
+        size = getattr(self.file, "size", 0) or 0
+        if size > settings.APPEARANCE_MAX_UPLOAD_BYTES:
+            max_mb = settings.APPEARANCE_MAX_UPLOAD_BYTES // (1024 * 1024)
+            raise ValidationError({"file": f"File exceeds the {max_mb} MB upload limit."})
+
     def __str__(self):
-        return f"{self.file.name} - {self.status}"
+        return f"{self.file.name if self.file else 'purged upload'} - {self.status}"
 
 
 class ProcessSchedule(models.Model):
@@ -249,6 +264,7 @@ class OperationalRecord(models.Model):
         AFTERNOON = "AFTERNOON", "Afternoon"
         NIGHT = "NIGHT", "Night"
 
+    request_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     employee_id = models.CharField(max_length=50, db_index=True)
     employee_name = models.CharField(max_length=255)
     role = models.CharField(max_length=255, blank=True)

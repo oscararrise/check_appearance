@@ -6,7 +6,7 @@ from .studio_assignment import parse_studio_assignment
 class StudioAssignmentParserTests(SimpleTestCase):
     def test_extracts_nearest_header_and_game(self):
         payload = {
-            "hibob_id": "48444",
+            "hibob_id": "91004",
             "table_found": "Table4",
             "data": [
                 {
@@ -14,24 +14,24 @@ class StudioAssignmentParserTests(SimpleTestCase):
                     "Column2": "8.5 Spanish Top Card (LIVE) (NO VISIBLE TATTOOS) Dedicated",
                 },
                 {
-                    "Column1": "48281",
-                    "Column2": "Daniel Molina BJ/VIP BJ/TOP CARD/MW",
+                    "Column1": "91001",
+                    "Column2": "Synthetic Employee One BJ/VIP BJ/TOP CARD/MW",
                 },
                 {
-                    "Column1": "47260",
-                    "Column2": "Cristian Leonardo Diaz Barbosa BJ/VIP BJ/ONE BJ/TOP CARD",
+                    "Column1": "91002",
+                    "Column2": "Synthetic Employee Two BJ/VIP BJ/ONE BJ/TOP CARD",
                 },
                 {
-                    "Column1": "48444",
-                    "Column2": "Johan Andrés Valderrama López BJ/VIP BJ/ONE BJ/TOP CARD",
+                    "Column1": "91004",
+                    "Column2": "Synthetic Employee Three BJ/VIP BJ/ONE BJ/TOP CARD",
                 },
             ],
         }
 
         result = parse_studio_assignment(
             payload,
-            "48444",
-            "Johan Andrés Valderrama López",
+            "91004",
+            "Synthetic Employee Three",
         )
 
         self.assertTrue(result["found"])
@@ -45,22 +45,22 @@ class StudioAssignmentParserTests(SimpleTestCase):
 
     def test_returns_not_found_when_id_is_missing_from_data(self):
         payload = {
-            "hibob_id": "48444",
+            "hibob_id": "91004",
             "table_found": "Table4",
             "data": [
                 {"Column1": " ID ", "Column2": "9.1 BJ Dedicated"},
-                {"Column1": "49105", "Column2": "Julio Cesar Tovar Rodriguez BJ/SP BJ/FBJ"},
+                {"Column1": "91005", "Column2": "Synthetic Employee Five BJ/SP BJ/FBJ"},
             ],
         }
 
-        result = parse_studio_assignment(payload, "48444", "Johan Valderrama")
+        result = parse_studio_assignment(payload, "91004", "Synthetic Employee Three")
 
         self.assertFalse(result["found"])
 
 
     def test_supports_dynamic_excel_column_names(self):
         payload = {
-            "hibob_id": "47827",
+            "hibob_id": "92002",
             "table_found": "Table2",
             "data": [
                 {
@@ -74,8 +74,8 @@ class StudioAssignmentParserTests(SimpleTestCase):
                     "Tattoo policy": "Tattoo policy",
                 },
                 {
-                    "ID": "46332",
-                    "7_x002e_1 Spanish (LIVE) Generic": "Hernan Tello BJ/SP BJ/FBJ",
+                    "ID": "92001",
+                    "7_x002e_1 Spanish (LIVE) Generic": "Synthetic Employee Six BJ/SP BJ/FBJ",
                     "TEAM": "",
                     "Appereance Check": "",
                     "Not Ready/Declined": "",
@@ -84,8 +84,8 @@ class StudioAssignmentParserTests(SimpleTestCase):
                     "Tattoo policy": "",
                 },
                 {
-                    "ID": "47827",
-                    "7_x002e_1 Spanish (LIVE) Generic": "Sara Espitia Alonso BJ/SP BJ/SPEED BR/RW",
+                    "ID": "92002",
+                    "7_x002e_1 Spanish (LIVE) Generic": "Synthetic Employee Seven BJ/SP BJ/SPEED BR/RW",
                     "TEAM": "",
                     "Appereance Check": "",
                     "Not Ready/Declined": "",
@@ -98,8 +98,8 @@ class StudioAssignmentParserTests(SimpleTestCase):
 
         result = parse_studio_assignment(
             payload,
-            "47827",
-            "Sara Espitia Alonso",
+            "92002",
+            "Synthetic Employee Seven",
         )
 
         self.assertTrue(result["found"])
@@ -139,7 +139,7 @@ class StudioAssignmentParserTests(SimpleTestCase):
 
     def test_assignment_type_falls_back_to_dynamic_column_name(self):
         payload = {
-            "hibob_id": "46228",
+            "hibob_id": "92003",
             "table_found": "Table2",
             "data": [
                 {
@@ -153,8 +153,8 @@ class StudioAssignmentParserTests(SimpleTestCase):
                     "Tattoo policy": "Tattoo policy",
                 },
                 {
-                    "ID": "46228",
-                    "7_x002e_1 Spanish (LIVE) Generic": "Patricia Targino Romero BJ/TP/RW/VIP/MW",
+                    "ID": "92003",
+                    "7_x002e_1 Spanish (LIVE) Generic": "Synthetic Employee Eight BJ/TP/RW/VIP/MW",
                     "TEAM": "",
                     "Appereance Check": "",
                     "Not Ready/Declined": "",
@@ -167,8 +167,8 @@ class StudioAssignmentParserTests(SimpleTestCase):
 
         result = parse_studio_assignment(
             payload,
-            "46228",
-            "Patricia Targino Romero",
+            "92003",
+            "Synthetic Employee Eight",
         )
 
         self.assertTrue(result["found"])

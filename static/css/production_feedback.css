@@ -1,0 +1,50 @@
+.alert-warning {
+    border-color: #d7a014;
+    background: #fff8e7;
+    color: #704d00;
+}
+
+.studio-assignment-state {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e4d9f2;
+    border-radius: 14px;
+    background: #faf8fd;
+}
+
+.studio-assignment-state strong {
+    display: block;
+    margin-bottom: .3rem;
+    color: #2f164f;
+}
+
+.studio-assignment-state p {
+    margin: 0;
+    color: #695d74;
+    line-height: 1.45;
+}
+
+.studio-assignment-state-not_found {
+    border-color: #e5c36f;
+    background: #fffaf0;
+}
+
+.studio-assignment-state-unavailable,
+.studio-assignment-state-invalid_response,
+.studio-assignment-state-auth_error {
+    border-color: #dfb3b3;
+    background: #fff6f6;
+}
+
+@media (max-width: 760px) {
+    .studio-assignment-state {
+        flex-direction: column;
+    }
+
+    .studio-assignment-state .btn {
+        width: 100%;
+    }
+}

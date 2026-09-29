@@ -1,0 +1,39 @@
+[Unit]
+Description=Check Appearance Django Gunicorn
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/apps/check_appearance
+EnvironmentFile=/home/ubuntu/apps/check_appearance/.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+UMask=0027
+
+ExecStart=/home/ubuntu/apps/check_appearance/.venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --timeout 45 \
+    --graceful-timeout 30 \
+    --access-logfile - \
+    --error-logfile - \
+    config.wsgi:application
+
+Restart=always
+RestartSec=3
+TimeoutStopSec=45
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/home/ubuntu/apps/check_appearance/data
+
+[Install]
+WantedBy=multi-user.target

@@ -38,25 +38,25 @@ SECURITY_HEADERS = [
 
 SECURITY_ROW = [
     "1",
-    "48961",
-    "1024598156",
-    "Mackleyn",
-    "Abril Camargo",
-    "3118350602",
+    "93001",
+    "0000000001",
+    "Synthetic",
+    "Employee One",
+    "3000000001",
     "O+",
     "Moto",
-    "Pulsar",
-    "180",
-    "Blanco Azul",
-    "CBL22E",
+    "Test Motorcycle",
+    "Test Model",
+    "Test Color",
+    "TEST01",
     "Operations Direct",
     "Game Presenter with Spanish",
-    "167586-11151051820-1",
-    "36514",
-    "1761",
-    "14090",
+    "TEST-CARD-0001",
+    "60001",
+    "1001",
+    "2001",
     "SI",
-    "Aliansalud",
+    "Test EPS",
     "",
     "",
     "",
@@ -82,10 +82,10 @@ class SecurityGeneralImportTests(TestCase):
         self.assertEqual(batch.rows_imported, 1)
 
         record = SecurityInfoRecord.objects.get(is_active=True)
-        self.assertEqual(record.employee_id, "48961")
-        self.assertEqual(record.document, "1024598156")
-        self.assertEqual(record.first_name, "Mackleyn")
-        self.assertEqual(record.card_number, "167586-11151051820-1")
+        self.assertEqual(record.employee_id, "93001")
+        self.assertEqual(record.document, "0000000001")
+        self.assertEqual(record.first_name, "Synthetic")
+        self.assertEqual(record.card_number, "TEST-CARD-0001")
 
     def test_xlsx_security_base_is_auto_detected(self):
         with TemporaryDirectory() as tmpdir:

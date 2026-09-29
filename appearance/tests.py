@@ -16,8 +16,8 @@ class PowerAutomateIntegrationTests(TestCase):
             password="test-password",
         )
         self.check = AppearanceCheck.objects.create(
-            employee_id="49105",
-            employee_name="Julio Cesar Tovar Rodriguez",
+            employee_id="90001",
+            employee_name="Synthetic Employee Alpha",
             role="Game Presenter",
             shift="AFTERNOON",
             status=AppearanceCheck.Status.NOT_READY,
@@ -30,7 +30,7 @@ class PowerAutomateIntegrationTests(TestCase):
     def test_payload_maps_excel_fields(self):
         payload = build_appearance_check_payload(self.check)
 
-        self.assertEqual(payload["employee_id"], "49105")
+        self.assertEqual(payload["employee_id"], "90001")
         self.assertEqual(payload["appearance_check"], "Not Ready")
         self.assertEqual(payload["appearance_check_code"], "NOT_READY")
         self.assertFalse(payload["is_ready"])
@@ -49,7 +49,7 @@ class PowerAutomateIntegrationTests(TestCase):
 
         self.assertEqual(delivery.status, PowerAutomateDelivery.Status.DISABLED)
         self.assertEqual(delivery.attempts, 0)
-        self.assertEqual(delivery.payload["employee_id"], "49105")
+        self.assertEqual(delivery.payload["employee_id"], "90001")
 
     @override_settings(
         POWER_AUTOMATE_ENABLED=True,
@@ -72,7 +72,7 @@ class PowerAutomateIntegrationTests(TestCase):
 
         request = mocked_urlopen.call_args.args[0]
         sent_payload = json.loads(request.data.decode("utf-8"))
-        self.assertEqual(sent_payload["employee_id"], "49105")
+        self.assertEqual(sent_payload["employee_id"], "90001")
         self.assertEqual(sent_payload["not_ready_declined"], "Not Ready")
 
 

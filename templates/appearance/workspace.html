@@ -5,6 +5,7 @@
 <div class="workspace-shell"
      data-process="{{ process }}"
      data-lookup-url="{% url 'appearance:lookup_employee' %}"
+     data-studio-retry-url="{% url 'appearance:retry_studio_assignment' %}"
      data-preparation-url="{% url 'appearance:record_preparation' %}"
      data-check-url="{% url 'appearance:record_check' %}"
      data-schedule-url="{% url 'appearance:update_schedule' process %}">
@@ -22,7 +23,7 @@
                 <div class="topbar-actions">
                     <span class="user-chip"><span class="user-dot" aria-hidden="true"></span>{{ request.user.username }}</span>
                     <a class="btn btn-ghost btn-compact" href="{% url 'appearance:process_selection' %}">Processes</a>
-                    <a class="btn btn-ghost btn-compact" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+                    {% if can_export %}<a class="btn btn-ghost btn-compact" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>{% endif %}
                 </div>
             </div>
 
@@ -254,7 +255,7 @@
                 </div>
                 <div class="history-actions">
                     <span class="history-count">{{ history_count }} match{{ history_count|pluralize:"es" }}</span>
-                    <a class="btn btn-secondary btn-compact" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>
+                    {% if can_export %}<a class="btn btn-secondary btn-compact" href="{% url 'appearance:export_report' %}?process={{ process }}">Export today</a>{% endif %}
                 </div>
             </div>
 
@@ -343,5 +344,5 @@
         </article>
     </section>
 </div>
-<script src="{% static 'js/appearance.js' %}?v=20260929-1"></script>
+<script src="{% static 'js/appearance.js' %}?v=20260929-2"></script>
 {% endblock %}

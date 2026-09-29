@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Check Appearance upload retention cleanup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+Unit=check-appearance-cleanup.service
+
+[Install]
+WantedBy=timers.target

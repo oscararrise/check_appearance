@@ -41,25 +41,25 @@ class SecurityRealLayoutImportTests(TestCase):
         rows = [
             [
                 "1",
-                "48961",
-                "1024598156",
-                "Mackleyn",
-                "Abril Camargo",
-                "3118350602",
+                "93001",
+                "0000000001",
+                "Synthetic",
+                "Employee One",
+                "3000000001",
                 "O+",
                 "Moto",
-                "Pulsar",
-                "180",
-                "Blanco Azul",
-                "CBL22E",
+                "Test Motorcycle",
+                "Test Model",
+                "Test Color",
+                "TEST01",
                 "Operations Direct",
                 "Game Presenter with Spanish",
-                "167586-11151051820-1",
-                "36514",
-                "1761",
-                "14090",
+                "TEST-CARD-0001",
+                "60001",
+                "1001",
+                "2001",
                 "SI",
-                "Aliansalud",
+                "Test EPS",
                 "",
                 "",
                 "",
@@ -70,11 +70,11 @@ class SecurityRealLayoutImportTests(TestCase):
             ],
             [
                 "2",
-                "50002",
-                "1002003004",
-                "José",
-                "Muñoz Peña",
-                "3000000000",
+                "93002",
+                "0000000002",
+                "Synthetic José",
+                "Employee Two Peña",
+                "3000000002",
                 "A+",
                 "",
                 "",
@@ -85,10 +85,10 @@ class SecurityRealLayoutImportTests(TestCase):
                 "Security Officer",
                 "CARD-002",
                 "",
-                "1761",
-                "14090",
+                "1001",
+                "2001",
                 "SÍ",
-                "Sura",
+                "Test EPS Two",
                 "",
                 "Reposición",
                 "15/09/2026",
@@ -126,14 +126,14 @@ class SecurityRealLayoutImportTests(TestCase):
         records = SecurityInfoRecord.objects.filter(is_active=True).order_by("employee_id")
         self.assertEqual(records.count(), 2)
 
-        first = records.get(employee_id="48961")
-        self.assertEqual(first.document, "1024598156")
-        self.assertEqual(first.card_number, "167586-11151051820-1")
-        self.assertEqual(first.facility_code_se, "14090")
+        first = records.get(employee_id="93001")
+        self.assertEqual(first.document, "0000000001")
+        self.assertEqual(first.card_number, "TEST-CARD-0001")
+        self.assertEqual(first.facility_code_se, "2001")
 
-        second = records.get(employee_id="50002")
-        self.assertEqual(second.first_name, "José")
-        self.assertEqual(second.last_name, "Muñoz Peña")
+        second = records.get(employee_id="93002")
+        self.assertEqual(second.first_name, "Synthetic José")
+        self.assertEqual(second.last_name, "Employee Two Peña")
         self.assertEqual(second.first_replacement, "Reposición")
 
     def test_filename_does_not_determine_security_source_type(self):
