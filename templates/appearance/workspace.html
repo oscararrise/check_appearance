@@ -115,7 +115,7 @@
                         </span>
                         <div>
                             <p class="eyebrow">EMPLOYEE LOOKUP</p>
-                            <h2>Scan or enter Employee ID</h2>
+                            <h2>Scan card or enter Employee ID</h2>
                         </div>
                     </div>
                     <span class="mode-badge"><span class="mode-dot"></span>Scanner ready</span>
@@ -123,16 +123,20 @@
 
                 <form id="scan-form" class="scan-row">
                     {% csrf_token %}
+                    <div class="lookup-mode-control" role="group" aria-label="Lookup mode">
+                        <button type="button" class="btn btn-soft lookup-mode-btn active" data-lookup-mode="card" aria-pressed="true">Card</button>
+                        <button type="button" class="btn btn-soft lookup-mode-btn" data-lookup-mode="employee_id" aria-pressed="false">Employee ID</button>
+                    </div>
                     <div class="scan-input-wrap">
                         <span class="scan-input-icon" aria-hidden="true">#</span>
-                        <input id="employee-id-input" class="scan-input" inputmode="numeric" autocomplete="off" placeholder="Employee ID" aria-label="Employee ID">
+                        <input id="employee-id-input" class="scan-input" inputmode="numeric" autocomplete="off" placeholder="Scan card" aria-label="Card or Employee ID">
                     </div>
                     <button class="btn btn-primary btn-large scan-button action-button" type="submit">
                         <span>Search employee</span><span class="button-arrow" aria-hidden="true">→</span>
                     </button>
                 </form>
                 <div class="scanner-helper-row">
-                    <p class="helper">Use a USB scanner or type the Employee ID manually. Press Enter to continue.</p>
+                    <p class="helper">Card mode sends the reader RAW value to Card Resolver. Employee ID mode searches HiBob directly. Press Enter to continue.</p>
                     <span class="keyboard-hint">ENTER ↵</span>
                 </div>
                 <div id="message" class="alert hidden" role="status"></div>
@@ -338,5 +342,5 @@
         </article>
     </section>
 </div>
-<script src="{% static 'js/appearance.js' %}?v=20260924-5"></script>
+<script src="{% static 'js/appearance.js' %}?v=20260929-1"></script>
 {% endblock %}
