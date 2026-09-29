@@ -17,6 +17,7 @@ Use the following request body schema:
     "event": { "type": "string" },
     "event_version": { "type": "integer" },
     "record_id": { "type": "integer" },
+    "request_id": { "type": "string" },
     "employee_id": { "type": "string" },
     "employee_name": { "type": "string" },
     "role": { "type": "string" },
@@ -37,6 +38,7 @@ Use the following request body schema:
     "event",
     "event_version",
     "record_id",
+    "request_id",
     "employee_id",
     "employee_name",
     "appearance_check",
@@ -57,6 +59,7 @@ Example body sent by Django:
   "event": "appearance_check.recorded",
   "event_version": 1,
   "record_id": 125,
+  "request_id": "de90dc51-547a-4cdf-bb17-98bc8ee72b92",
   "employee_id": "49105",
   "employee_name": "Julio Cesar Tovar Rodriguez",
   "role": "Game Presenter",
@@ -109,6 +112,8 @@ Put it only in the VM `.env` file:
 POWER_AUTOMATE_ENABLED=True
 POWER_AUTOMATE_FLOW_URL="https://<generated-power-automate-trigger-url>"
 POWER_AUTOMATE_TIMEOUT_SECONDS=5
+POWER_AUTOMATE_MAX_ATTEMPTS=5
+POWER_AUTOMATE_RETRY_DELAYS_SECONDS=60,300,900,1800
 ```
 
 Optional custom header support is available if the flow validates an additional shared secret:
@@ -126,8 +131,10 @@ Restart the Django/Gunicorn process after changing environment variables.
 - An Appearance Check is persisted first.
 - Django creates one `PowerAutomateDelivery` per Appearance Check.
 - Successful HTTP 2xx responses become `SENT`.
-- HTTP/network failures become `FAILED` and preserve the payload plus safe error metadata.
+- HTTP/network failures become `FAILED` and preserve the payload plus sanitized error codes only. Remote error bodies, signed URLs and tokens are never persisted as delivery errors.
 - If integration is disabled, the delivery is marked `DISABLED`.
 - Failed deliveries can be selected in Django Admin and retried with **Retry selected Power Automate deliveries**.
+- Production can also run `python manage.py retry_power_automate` from the supplied systemd timer. Retries are bounded by `POWER_AUTOMATE_MAX_ATTEMPTS` and the configured delay schedule.
+- The browser receives a successful save response even when the downstream delivery is pending/failed, and shows a synchronization warning instead of pretending the entire Appearance Check failed.
 
 This makes Excel/Power Automate downstream of PostgreSQL rather than the operational source of truth.
