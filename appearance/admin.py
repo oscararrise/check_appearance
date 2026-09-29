@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import admin, messages
 
 from .import_services import process_data_upload
@@ -14,6 +16,9 @@ from .models import (
     TattooRecord,
 )
 from .power_automate import publish_appearance_check
+
+
+logger = logging.getLogger(__name__)
 
 
 @admin.register(DataUpload)
@@ -69,8 +74,13 @@ class DataUploadAdmin(admin.ModelAdmin):
                         f"{batch.rows_rejected} rows rejected ({batch.get_status_display()}).",
                         level=messages.SUCCESS if batch.status == ImportBatch.Status.SUCCESS else messages.WARNING,
                     )
-            except Exception as exc:
-                self.message_user(request, f"Import failed: {exc}", level=messages.ERROR)
+            except Exception:
+                logger.exception("DATA_UPLOAD_IMPORT_FAILED upload_id=%s", obj.pk)
+                self.message_user(
+                    request,
+                    "Import failed. Review the import batch/logs for the safe error summary.",
+                    level=messages.ERROR,
+                )
 
 
 @admin.register(TattooRecord)
