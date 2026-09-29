@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Check Appearance Power Automate retry every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Persistent=true
+Unit=check-appearance-retry.service
+
+[Install]
+WantedBy=timers.target
