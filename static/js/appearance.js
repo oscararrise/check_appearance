@@ -661,6 +661,11 @@
 
             if (saved.power_automate?.sent) {
                 showMessage(`Record saved. ${currentEmployee.full_name} is ${saved.record.status}.`, 'success');
+            } else if (saved.power_automate?.status === 'DISABLED') {
+                showMessage(
+                    `Record saved. ${currentEmployee.full_name} is ${saved.record.status}. Downstream synchronization is disabled.`,
+                    'warning',
+                );
             } else {
                 showMessage(
                     `Record saved. ${currentEmployee.full_name} is ${saved.record.status}. Downstream synchronization is pending.`,
