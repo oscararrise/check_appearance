@@ -6,8 +6,18 @@ from django.db import migrations, models
 def backfill_request_ids(apps, schema_editor):
     for model_name in ("PreparationScan", "AppearanceCheck"):
         model = apps.get_model("appearance", model_name)
+        pending = []
+
         for row in model.objects.filter(request_id__isnull=True).only("pk").iterator(chunk_size=1000):
-            model.objects.filter(pk=row.pk).update(request_id=uuid.uuid4())
+            row.request_id = uuid.uuid4()
+            pending.append(row)
+
+            if len(pending) >= 1000:
+                model.objects.bulk_update(pending, ["request_id"], batch_size=1000)
+                pending.clear()
+
+        if pending:
+            model.objects.bulk_update(pending, ["request_id"], batch_size=1000)
 
 
 class Migration(migrations.Migration):
