@@ -13,6 +13,7 @@ from django.views.decorators.http import require_GET, require_POST
 from openpyxl import Workbook
 
 from .models import AppearanceCheck, PowerAutomateDelivery, PreparationScan, ProcessSchedule
+from .card_resolver import CardResolverError, resolve_card
 from .power_automate import publish_appearance_check
 from .studio_assignment import fetch_studio_assignment
 from .services import (
@@ -233,10 +234,22 @@ def workspace(request, process):
 @require_POST
 def lookup_employee(request):
     payload = _json_body(request)
+    lookup_mode = str(payload.get("lookup_mode", "employee_id")).strip().lower()
     employee_id = str(payload.get("employee_id", "")).strip()
+    card_raw = str(payload.get("card_raw", "")).strip()
     process = str(payload.get("process", "CHECK")).upper()
     if process not in {"PREPARATION", "CHECK"}:
         process = "CHECK"
+
+    card_resolution = None
+    if lookup_mode == "card":
+        try:
+            card_resolution = resolve_card(card_raw)
+        except CardResolverError as exc:
+            return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+        employee_id = card_resolution.employee_id
+    elif lookup_mode != "employee_id":
+        return JsonResponse({"ok": False, "error": "Invalid lookup mode."}, status=400)
 
     profile = get_employee_profile(employee_id)
     if profile is None:
@@ -261,6 +274,7 @@ def lookup_employee(request):
                 "appearance_approvals": appearance_approval_payload(profile),
                 "studio_assignment": studio_assignment,
                 "latest_process_record": _latest_employee_record(profile.employee_id, process),
+                "lookup_source": "card" if card_resolution else "employee_id",
             },
         }
     )
