@@ -20,6 +20,7 @@
     let selectedStatus = null;
     let selectedLate = null;
     let saveToastTimer = null;
+    let lookupMode = 'card';
 
     const csrfToken = () => {
         const name = 'csrftoken=';
@@ -422,18 +423,35 @@
         }
     });
 
+    document.querySelectorAll('.lookup-mode-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+            lookupMode = button.dataset.lookupMode;
+            document.querySelectorAll('.lookup-mode-btn').forEach((item) => {
+                const active = item === button;
+                item.classList.toggle('active', active);
+                item.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+            input.placeholder = lookupMode === 'card' ? 'Scan card' : 'Employee ID';
+            input.value = '';
+            input.focus();
+        });
+    });
+
     scanForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const employeeId = input.value.trim();
-        if (!employeeId) {
-            showMessage('Enter an Employee ID.', 'error');
+        const lookupValue = input.value.trim();
+        if (!lookupValue) {
+            showMessage(lookupMode === 'card' ? 'Scan a card.' : 'Enter an Employee ID.', 'error');
             input.focus();
             return;
         }
 
-        showMessage('Searching HiBob, studio assignment and Appearance data…', 'info');
+        showMessage(lookupMode === 'card' ? 'Resolving card and loading employee data…' : 'Searching HiBob, studio assignment and Appearance data…', 'info');
         try {
-            const result = await postJson(shell.dataset.lookupUrl, { employee_id: employeeId, process });
+            const lookupPayload = lookupMode === 'card'
+                ? { lookup_mode: 'card', card_raw: lookupValue, process }
+                : { lookup_mode: 'employee_id', employee_id: lookupValue, process };
+            const result = await postJson(shell.dataset.lookupUrl, lookupPayload);
             renderEmployee(result.employee);
             resetCheckSelection();
 
