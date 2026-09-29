@@ -20,6 +20,19 @@ class SensitiveResponseHeadersMiddleware:
         response = self.get_response(request)
         response["X-Request-ID"] = request_id
         response["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response["X-Robots-Tag"] = "noindex, nofollow"
+        response["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "base-uri 'self'; "
+            "connect-src 'self'; "
+            "font-src 'self' data:; "
+            "form-action 'self'; "
+            "frame-ancestors 'none'; "
+            "img-src 'self' data:; "
+            "object-src 'none'; "
+            "script-src 'self'; "
+            "style-src 'self' 'unsafe-inline'"
+        )
 
         user = getattr(request, "user", None)
         authenticated = bool(user and user.is_authenticated)
