@@ -636,3 +636,76 @@ svg { display: block; width: 100%; height: 100%; }
     .late-selector { align-items: stretch; flex-direction: column; }
     .late-options { width: 100%; }
 }
+
+
+/* Scanner lookup hierarchy */
+.scan-row-stacked {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+.scan-row-stacked .lookup-mode-control {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+}
+.scan-row-stacked .lookup-mode-btn {
+    min-height: 38px;
+    padding: 0 16px;
+    border-radius: 11px;
+}
+.scan-row-stacked .lookup-mode-btn.active {
+    color: #fff;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: 0 7px 18px rgba(53,16,106,.14);
+}
+.scan-row-stacked .scan-input-wrap {
+    position: relative;
+    width: 100%;
+}
+.scan-row-stacked .scan-field-label {
+    position: absolute;
+    left: 58px;
+    top: 13px;
+    z-index: 1;
+    color: #81758d;
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: .1em;
+    pointer-events: none;
+}
+.scan-row-stacked .scan-input-icon {
+    left: 20px;
+    font-size: 24px;
+}
+.scan-row-stacked .scan-input {
+    width: 100%;
+    min-height: 88px;
+    padding: 27px 22px 10px 58px;
+    border-radius: 16px;
+    font-size: clamp(28px, 3vw, 38px);
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: .035em;
+}
+.scan-row-stacked .scan-input::placeholder {
+    color: #aaa1b2;
+    font-size: clamp(22px, 2.4vw, 30px);
+    font-weight: 750;
+    letter-spacing: -.015em;
+}
+.scan-row-stacked .scan-button {
+    width: 100%;
+    min-height: 58px;
+    min-width: 0;
+    justify-content: space-between;
+    padding-inline: 22px;
+    border-radius: 14px;
+}
+@media (max-width: 720px) {
+    .scan-row-stacked .scan-input { min-height: 80px; font-size: 28px; }
+    .scan-row-stacked .scan-input::placeholder { font-size: 23px; }
+}
