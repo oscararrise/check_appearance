@@ -137,6 +137,51 @@ class WorkforceHardeningTests(SimpleTestCase):
         self.assertEqual(result["status"], NOT_FOUND)
         self.assertEqual(result["error_code"], "WORKFORCE_EMPLOYEE_NOT_FOUND")
 
+    def test_empty_dataset_without_table_confirmation_is_invalid(self):
+        result = parse_studio_assignment(
+            {"data": []},
+            "47827",
+            "Sara Espitia",
+        )
+        self.assertEqual(result["status"], INVALID_RESPONSE)
+        self.assertEqual(result["error_code"], "WORKFORCE_INVALID_RESPONSE")
+
+    def test_excel_numeric_employee_id_with_dot_zero_matches(self):
+        payload = {
+            "table_found": "Table2",
+            "data": [
+                {
+                    "Column1": "ID",
+                    "Column2": "7.3 Portuguese (LIVE) Generic",
+                },
+                {
+                    "Column1": "47827.0",
+                    "Column2": "Sara Espitia Alonso BJ/SP BJ/SPEED",
+                },
+            ],
+        }
+
+        result = parse_studio_assignment(
+            payload,
+            "47827",
+            "Sara Espitia Alonso",
+        )
+
+        self.assertTrue(result["found"])
+        self.assertEqual(result["status"], "FOUND")
+        self.assertEqual(result["studio"], "7.3")
+
+    def test_employee_row_without_assignment_text_column_is_invalid(self):
+        result = parse_studio_assignment(
+            {
+                "table_found": "Table2",
+                "data": [{"ID": "47827"}],
+            },
+            "47827",
+            "Sara Espitia",
+        )
+        self.assertEqual(result["status"], INVALID_RESPONSE)
+
 
 class PowerAutomateSanitizationTests(TestCase):
     def setUp(self):
