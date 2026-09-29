@@ -92,7 +92,7 @@ class WorkforceHardeningTests(SimpleTestCase):
     @patch("appearance.studio_assignment.urlopen")
     def test_network_failure_is_unavailable(self, mocked_urlopen):
         mocked_urlopen.side_effect = URLError("network down")
-        result = fetch_studio_assignment("47827", "Sara Espitia")
+        result = fetch_studio_assignment("94001", "Synthetic Employee Nine")
 
         self.assertEqual(result["status"], UNAVAILABLE)
         self.assertTrue(result["retryable"])
@@ -114,7 +114,7 @@ class WorkforceHardeningTests(SimpleTestCase):
             None,
             None,
         )
-        result = fetch_studio_assignment("47827", "Sara Espitia")
+        result = fetch_studio_assignment("94001", "Synthetic Employee Nine")
 
         self.assertEqual(result["status"], AUTH_ERROR)
         self.assertEqual(result["error_code"], "WORKFORCE_AUTH_ERROR")
@@ -123,16 +123,16 @@ class WorkforceHardeningTests(SimpleTestCase):
     def test_missing_data_shape_is_invalid_response(self):
         result = parse_studio_assignment(
             {"table_found": "Table2"},
-            "47827",
-            "Sara Espitia",
+            "94001",
+            "Synthetic Employee Nine",
         )
         self.assertEqual(result["status"], INVALID_RESPONSE)
 
     def test_empty_valid_dataset_is_real_not_found(self):
         result = parse_studio_assignment(
             {"table_found": "Table2", "data": []},
-            "47827",
-            "Sara Espitia",
+            "94001",
+            "Synthetic Employee Nine",
         )
         self.assertEqual(result["status"], NOT_FOUND)
         self.assertEqual(result["error_code"], "WORKFORCE_EMPLOYEE_NOT_FOUND")
@@ -140,8 +140,8 @@ class WorkforceHardeningTests(SimpleTestCase):
     def test_empty_dataset_without_table_confirmation_is_invalid(self):
         result = parse_studio_assignment(
             {"data": []},
-            "47827",
-            "Sara Espitia",
+            "94001",
+            "Synthetic Employee Nine",
         )
         self.assertEqual(result["status"], INVALID_RESPONSE)
         self.assertEqual(result["error_code"], "WORKFORCE_INVALID_RESPONSE")
@@ -155,16 +155,16 @@ class WorkforceHardeningTests(SimpleTestCase):
                     "Column2": "7.3 Portuguese (LIVE) Generic",
                 },
                 {
-                    "Column1": "47827.0",
-                    "Column2": "Sara Espitia Alonso BJ/SP BJ/SPEED",
+                    "Column1": "94001.0",
+                    "Column2": "Synthetic Employee Nine BJ/SP BJ/SPEED",
                 },
             ],
         }
 
         result = parse_studio_assignment(
             payload,
-            "47827",
-            "Sara Espitia Alonso",
+            "94001",
+            "Synthetic Employee Nine",
         )
 
         self.assertTrue(result["found"])
@@ -175,10 +175,10 @@ class WorkforceHardeningTests(SimpleTestCase):
         result = parse_studio_assignment(
             {
                 "table_found": "Table2",
-                "data": [{"ID": "47827"}],
+                "data": [{"ID": "94001"}],
             },
-            "47827",
-            "Sara Espitia",
+            "94001",
+            "Synthetic Employee Nine",
         )
         self.assertEqual(result["status"], INVALID_RESPONSE)
 
@@ -190,7 +190,7 @@ class PowerAutomateSanitizationTests(TestCase):
             password="test-password",
         )
         self.check = AppearanceCheck.objects.create(
-            employee_id="49105",
+            employee_id="94002",
             employee_name="Test Employee",
             role="Game Presenter",
             shift="MORNING",
@@ -230,8 +230,8 @@ class OperationalApiHardeningTests(TestCase):
         )
         self.client.force_login(self.user)
         self.profile = EmployeeProfile(
-            employee_id="47827",
-            full_name="Sara Espitia Alonso",
+            employee_id="94001",
+            full_name="Synthetic Employee Nine",
             role="Game Presenter",
             tattoo_records=[],
             appearance_approval_records=[],
@@ -250,8 +250,8 @@ class OperationalApiHardeningTests(TestCase):
     @patch(
         "appearance.views.resolve_card",
         return_value=CardResolution(
-            employee_id="47827",
-            employee_name="Sara Espitia",
+            employee_id="94001",
+            employee_name="Synthetic Employee Nine",
             facility_code="1",
             card_number="2",
         ),
@@ -278,7 +278,7 @@ class OperationalApiHardeningTests(TestCase):
         get_profile.return_value = self.profile
         request_id = str(uuid.uuid4())
         body = {
-            "employee_id": "47827",
+            "employee_id": "94001",
             "status": "READY",
             "late": False,
             "comment": "",
@@ -309,7 +309,7 @@ class OperationalApiHardeningTests(TestCase):
         request_id = str(uuid.uuid4())
 
         first_body = {
-            "employee_id": "47827",
+            "employee_id": "94001",
             "status": "READY",
             "late": False,
             "comment": "",
