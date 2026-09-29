@@ -29,7 +29,7 @@ from .studio_assignment import (
 
 
 class CardResolverHardeningTests(SimpleTestCase):
-    settings = {
+    resolver_settings = {
         "CARD_RESOLVER_ENABLED": True,
         "CARD_RESOLVER_URL": "https://resolver.example/api/v1/cards/resolve",
         "CARD_RESOLVER_SERVICE_TOKEN": "test-service-token",
@@ -37,7 +37,7 @@ class CardResolverHardeningTests(SimpleTestCase):
         "CARD_RESOLVER_MAX_RESPONSE_BYTES": 4096,
     }
 
-    @override_settings(**settings)
+    @override_settings(**resolver_settings)
     @patch("appearance.card_resolver.urlopen")
     def test_not_found_is_typed_404(self, mocked_urlopen):
         mocked_urlopen.side_effect = HTTPError(
@@ -55,7 +55,7 @@ class CardResolverHardeningTests(SimpleTestCase):
         self.assertEqual(ctx.exception.http_status, 404)
         self.assertFalse(ctx.exception.retryable)
 
-    @override_settings(**settings)
+    @override_settings(**resolver_settings)
     @patch("appearance.card_resolver.urlopen")
     def test_dependency_timeout_is_retryable(self, mocked_urlopen):
         mocked_urlopen.side_effect = URLError("timeout")
@@ -67,7 +67,7 @@ class CardResolverHardeningTests(SimpleTestCase):
         self.assertEqual(ctx.exception.http_status, 503)
         self.assertTrue(ctx.exception.retryable)
 
-    @override_settings(**settings)
+    @override_settings(**resolver_settings)
     @patch("appearance.card_resolver.urlopen")
     def test_invalid_json_is_502_not_a_fake_not_found(self, mocked_urlopen):
         response = MagicMock()
@@ -355,9 +355,11 @@ class UploadHardeningTests(SimpleTestCase):
         upload = DataUpload(
             file=SimpleUploadedFile("security.csv", b"01234567890"),
             source_type=DataUpload.SourceType.SECURITY_GENERAL,
+            uploaded_by_id=1,
         )
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as ctx:
             upload.full_clean()
+        self.assertIn("file", ctx.exception.error_dict)
 
     @override_settings(
         APPEARANCE_MAX_UPLOAD_BYTES=1024 * 1024,
