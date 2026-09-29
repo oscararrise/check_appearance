@@ -709,3 +709,27 @@ svg { display: block; width: 100%; height: 100%; }
     .scan-row-stacked .scan-input { min-height: 80px; font-size: 28px; }
     .scan-row-stacked .scan-input::placeholder { font-size: 23px; }
 }
+
+
+/* Scanner layout override: strict vertical flow */
+.scanner-card #scan-form.scan-row.scan-row-stacked {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 12px;
+    margin-top: 20px;
+}
+.scanner-card #scan-form .lookup-mode-control,
+.scanner-card #scan-form .scan-input-wrap,
+.scanner-card #scan-form .scan-button {
+    width: 100%;
+}
+.scanner-card #scan-form .lookup-mode-control {
+    display: flex;
+    width: auto;
+    align-self: flex-start;
+}
+.scanner-card #scan-form .scan-input-wrap { order: 2; }
+.scanner-card #scan-form .lookup-mode-control { order: 1; }
+.scanner-card #scan-form .scan-button { order: 3; }
