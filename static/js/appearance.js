@@ -21,6 +21,9 @@
     let selectedLate = null;
     let saveToastTimer = null;
     let lookupMode = 'card';
+    let pendingCheckRequestId = null;
+    let pendingPreparationRequestId = null;
+    let pendingPreparationEmployeeId = null;
 
     const csrfToken = () => {
         const name = 'csrftoken=';
@@ -28,17 +31,78 @@
         return cookie ? decodeURIComponent(cookie.substring(name.length)) : '';
     };
 
+    class ApiRequestError extends Error {
+        constructor(message, code = 'REQUEST_FAILED', status = 0, retryable = false) {
+            super(message);
+            this.name = 'ApiRequestError';
+            this.code = code;
+            this.status = status;
+            this.retryable = retryable;
+        }
+    }
+
+    const newRequestId = () => {
+        if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+        const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = [...bytes].map(value => value.toString(16).padStart(2, '0')).join('');
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    };
+
     const postJson = async (url, payload) => {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken(),
-            },
-            body: JSON.stringify(payload),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Request failed.');
+        let response;
+        try {
+            response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken(),
+                },
+                body: JSON.stringify(payload),
+            });
+        } catch (error) {
+            throw new ApiRequestError(
+                'Network connection failed. Check connectivity and try again.',
+                'NETWORK_ERROR',
+                0,
+                true,
+            );
+        }
+
+        const raw = await response.text();
+        let data = {};
+        if (raw) {
+            try {
+                data = JSON.parse(raw);
+            } catch (error) {
+                data = {};
+            }
+        }
+
+        if (!response.ok) {
+            let fallback = 'Request failed. Please try again.';
+            if (response.status === 401) fallback = 'Your session has expired. Sign in again.';
+            else if (response.status === 403) fallback = 'You do not have permission to perform this action.';
+            else if (response.status === 429) fallback = 'Too many requests. Please wait and try again.';
+            else if (response.status >= 500) fallback = 'A service is temporarily unavailable. Please try again.';
+
+            throw new ApiRequestError(
+                data.error || fallback,
+                data.error_code || `HTTP_${response.status}`,
+                response.status,
+                Boolean(data.retryable) || response.status >= 500,
+            );
+        }
+
+        if (!raw || typeof data !== 'object' || Array.isArray(data)) {
+            throw new ApiRequestError(
+                'The server returned an invalid response. Please try again.',
+                'INVALID_RESPONSE',
+                response.status,
+                true,
+            );
+        }
         return data;
     };
 
@@ -149,10 +213,26 @@
         if (!container) return;
 
         if (!assignment?.found) {
-            const message = assignment?.unavailable
-                ? 'Studio assignment is temporarily unavailable. The employee profile can still be processed.'
-                : 'No studio assignment was found for this Employee ID in the current Power Automate response.';
-            container.innerHTML = `<div class="studio-assignment-empty">${escapeHtml(message)}</div>`;
+            const status = assignment?.status || 'UNAVAILABLE';
+            const title = status === 'NOT_FOUND'
+                ? 'Workforce assignment not found'
+                : status === 'AUTH_ERROR'
+                    ? 'Workforce authentication issue'
+                    : status === 'INVALID_RESPONSE'
+                        ? 'Workforce response could not be validated'
+                        : 'Workforce temporarily unavailable';
+            const description = assignment?.message || 'Studio assignment could not be verified.';
+            const canRetry = ['NOT_FOUND', 'UNAVAILABLE', 'INVALID_RESPONSE'].includes(status);
+
+            container.innerHTML = `
+                <div class="studio-assignment-state studio-assignment-state-${escapeHtml(status.toLowerCase())}">
+                    <div>
+                        <strong>${escapeHtml(title)}</strong>
+                        <p>${escapeHtml(description)} The HiBob employee profile can still be reviewed.</p>
+                    </div>
+                    ${canRetry ? '<button type="button" class="btn btn-soft btn-small" data-action="retry-studio">Retry Workforce</button>' : ''}
+                </div>
+            `;
             return;
         }
 
@@ -446,7 +526,7 @@
             return;
         }
 
-        showMessage(lookupMode === 'card' ? 'Resolving card and loading employee data…' : 'Searching HiBob, studio assignment and Appearance data…', 'info');
+        showMessage(lookupMode === 'card' ? 'Resolving card and loading employee data…' : 'Searching HiBob, Workforce and Appearance data…', 'info');
         try {
             const lookupPayload = lookupMode === 'card'
                 ? { lookup_mode: 'card', card_raw: lookupValue, process }
@@ -456,21 +536,73 @@
             resetCheckSelection();
 
             if (process === 'PREPARATION') {
-                const saved = await postJson(shell.dataset.preparationUrl, { employee_id: result.employee.employee_id });
+                if (pendingPreparationEmployeeId !== result.employee.employee_id || !pendingPreparationRequestId) {
+                    pendingPreparationEmployeeId = result.employee.employee_id;
+                    pendingPreparationRequestId = newRequestId();
+                }
+
+                const saved = await postJson(shell.dataset.preparationUrl, {
+                    employee_id: result.employee.employee_id,
+                    request_id: pendingPreparationRequestId,
+                });
+                pendingPreparationRequestId = null;
+                pendingPreparationEmployeeId = null;
+
                 prependHistory(saved.record, false);
                 renderLatestRecord(saved.record);
                 showRecordSavedToast(saved.record);
-                showMessage('Record saved. Appearance Preparation registration completed.', 'success');
+
+                const studioStatus = result.employee.studio_assignment?.status;
+                if (studioStatus === 'NOT_FOUND') {
+                    showMessage('Record saved. Workforce assignment was not found for this employee.', 'warning');
+                } else if (studioStatus && studioStatus !== 'FOUND') {
+                    showMessage('Record saved. Workforce assignment could not be verified.', 'warning');
+                } else {
+                    showMessage('Record saved. Appearance Preparation registration completed.', 'success');
+                }
             } else {
-                showMessage(`${result.employee.full_name} loaded. Select an Appearance status.`, 'success');
+                const studioStatus = result.employee.studio_assignment?.status;
+                if (studioStatus === 'NOT_FOUND') {
+                    showMessage(`${result.employee.full_name} loaded from HiBob, but no Workforce assignment was found.`, 'warning');
+                } else if (studioStatus && studioStatus !== 'FOUND') {
+                    showMessage(`${result.employee.full_name} loaded from HiBob. Workforce assignment could not be verified.`, 'warning');
+                } else {
+                    showMessage(`${result.employee.full_name} loaded. Select an Appearance status.`, 'success');
+                }
             }
         } catch (error) {
             currentEmployee = null;
             employeeCard.classList.add('hidden');
-            showMessage(error.message, 'error');
+            showMessage(error.message, error.retryable ? 'warning' : 'error');
         } finally {
             input.value = '';
             input.focus();
+        }
+    });
+
+    employeeCard?.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-action="retry-studio"]');
+        if (!button || !currentEmployee) return;
+
+        button.disabled = true;
+        button.textContent = 'Retrying…';
+        try {
+            const result = await postJson(shell.dataset.studioRetryUrl, {
+                employee_id: currentEmployee.employee_id,
+            });
+            currentEmployee.studio_assignment = result.studio_assignment;
+            renderStudioAssignment(result.studio_assignment);
+
+            if (result.studio_assignment?.status === 'FOUND') {
+                showMessage('Workforce assignment loaded successfully.', 'success');
+            } else if (result.studio_assignment?.status === 'NOT_FOUND') {
+                showMessage('Workforce responded, but this employee is not in the current assignment list.', 'warning');
+            } else {
+                showMessage('Workforce assignment is still unavailable.', 'warning');
+            }
+        } catch (error) {
+            showMessage(error.message, error.retryable ? 'warning' : 'error');
+            renderStudioAssignment(currentEmployee.studio_assignment);
         }
     });
 
@@ -498,21 +630,36 @@
     saveCheck?.addEventListener('click', async () => {
         if (!currentEmployee || !selectedStatus) return;
         saveCheck.disabled = true;
+        pendingCheckRequestId = pendingCheckRequestId || newRequestId();
+
         try {
             const saved = await postJson(shell.dataset.checkUrl, {
                 employee_id: currentEmployee.employee_id,
                 status: selectedStatus,
                 late: selectedLate,
                 comment: comment.value.trim(),
+                request_id: pendingCheckRequestId,
             });
+            pendingCheckRequestId = null;
+
             prependHistory(saved.record, true);
             renderLatestRecord(saved.record);
             showRecordSavedToast(saved.record);
-            showMessage(`Record saved. ${currentEmployee.full_name} is ${saved.record.status}.`, 'success');
+
+            if (saved.power_automate?.sent) {
+                showMessage(`Record saved. ${currentEmployee.full_name} is ${saved.record.status}.`, 'success');
+            } else {
+                showMessage(
+                    `Record saved. ${currentEmployee.full_name} is ${saved.record.status}. Downstream synchronization is pending.`,
+                    'warning',
+                );
+            }
+
             resetCheckSelection();
             input.focus();
         } catch (error) {
-            showMessage(error.message, 'error');
+            if (!error.retryable) pendingCheckRequestId = null;
+            showMessage(error.message, error.retryable ? 'warning' : 'error');
             saveCheck.disabled = false;
         }
     });
