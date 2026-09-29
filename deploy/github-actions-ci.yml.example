@@ -1,0 +1,62 @@
+# Copy this file to .github/workflows/ci.yml when repository policy permits workflow writes.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DJANGO_DEBUG: "True"
+      DJANGO_ENV: development
+      DJANGO_SECRET_KEY: ci-only-secret-key-not-for-production
+      DJANGO_ALLOWED_HOSTS: testserver,localhost,127.0.0.1
+      DJANGO_TEST_SQLITE: "True"
+      POWER_AUTOMATE_ENABLED: "False"
+      POWER_AUTOMATE_LOOKUP_ENABLED: "False"
+      CARD_RESOLVER_ENABLED: "False"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pip-audit
+
+      - name: Django checks
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Tests
+        run: python manage.py test --verbosity 2
+
+      - name: Production deployment checks
+        env:
+          DJANGO_DEBUG: "False"
+          DJANGO_ENV: production
+          DJANGO_SECRET_KEY: ci-production-check-secret-with-sufficient-length
+          DJANGO_ALLOWED_HOSTS: appearance.example.invalid
+          DJANGO_CSRF_TRUSTED_ORIGINS: https://appearance.example.invalid
+          DJANGO_SECURE_SSL_REDIRECT: "True"
+          DJANGO_TRUST_X_FORWARDED_PROTO: "True"
+          DJANGO_SECURE_HSTS_SECONDS: "31536000"
+          DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS: "True"
+        run: python manage.py check --deploy --fail-level WARNING
+
+      - name: Dependency audit
+        run: pip-audit -r requirements.txt
