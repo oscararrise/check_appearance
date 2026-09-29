@@ -70,6 +70,15 @@
             );
         }
 
+        if (response.redirected && response.url.includes('/login/')) {
+            throw new ApiRequestError(
+                'Your session has expired. Sign in again.',
+                'SESSION_EXPIRED',
+                401,
+                false,
+            );
+        }
+
         const raw = await response.text();
         let data = {};
         if (raw) {
@@ -87,11 +96,15 @@
             else if (response.status === 429) fallback = 'Too many requests. Please wait and try again.';
             else if (response.status >= 500) fallback = 'A service is temporarily unavailable. Please try again.';
 
+            const retryable = typeof data.retryable === 'boolean'
+                ? data.retryable
+                : response.status >= 500;
+
             throw new ApiRequestError(
                 data.error || fallback,
                 data.error_code || `HTTP_${response.status}`,
                 response.status,
-                Boolean(data.retryable) || response.status >= 500,
+                retryable,
             );
         }
 
