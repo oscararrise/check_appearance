@@ -117,8 +117,7 @@ POWER_AUTOMATE_TIMEOUT_SECONDS = int(os.getenv("POWER_AUTOMATE_TIMEOUT_SECONDS",
 POWER_AUTOMATE_LOOKUP_ENABLED = os.getenv("POWER_AUTOMATE_LOOKUP_ENABLED", "False").lower() in {"1", "true", "yes", "on"}
 POWER_AUTOMATE_LOOKUP_FLOW_URL = os.getenv("POWER_AUTOMATE_LOOKUP_FLOW_URL", "").strip()
 POWER_AUTOMATE_LOOKUP_API_KEY = os.getenv("POWER_AUTOMATE_LOOKUP_API_KEY", "").strip()
-POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS = int(os.getenv("POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS", "5"))
-POWER_AUTOMATE_LOOKUP_CACHE_SECONDS = int(os.getenv("POWER_AUTOMATE_LOOKUP_CACHE_SECONDS", "60"))
+POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS = int(os.getenv("POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS", "15"))
 
 # Card Resolver API used server-side for physical badge scans.
 # The service token must never be exposed to templates or browser JavaScript.
@@ -126,24 +125,3 @@ CARD_RESOLVER_ENABLED = os.getenv("CARD_RESOLVER_ENABLED", "False").lower() in {
 CARD_RESOLVER_URL = os.getenv("CARD_RESOLVER_URL", "").strip()
 CARD_RESOLVER_SERVICE_TOKEN = os.getenv("CARD_RESOLVER_SERVICE_TOKEN", "").strip()
 CARD_RESOLVER_TIMEOUT_SECONDS = int(os.getenv("CARD_RESOLVER_TIMEOUT_SECONDS", "5"))
-
-
-# Application performance/operational logs are written to stdout so Gunicorn
-# and systemd/journald can capture LOOKUP_PERF without changing endpoints.
-DJANGO_LOG_LEVEL = os.getenv("DJANGO_LOG_LEVEL", "INFO").upper()
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-    },
-    "loggers": {
-        "appearance": {
-            "handlers": ["console"],
-            "level": DJANGO_LOG_LEVEL,
-            "propagate": False,
-        },
-    },
-}

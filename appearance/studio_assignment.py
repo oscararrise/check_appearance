@@ -5,7 +5,6 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from django.conf import settings
-from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -208,10 +207,6 @@ def parse_studio_assignment(payload: dict, employee_id: str, employee_name: str 
     return result
 
 
-def _studio_assignment_cache_key(employee_id: str) -> str:
-    return f"appearance:studio-assignment:v1:{_clean(employee_id)}"
-
-
 def fetch_studio_assignment(employee_id: str, employee_name: str = "") -> dict:
     if not getattr(settings, "POWER_AUTOMATE_LOOKUP_ENABLED", False):
         return {
@@ -237,17 +232,6 @@ def fetch_studio_assignment(employee_id: str, employee_name: str = "") -> dict:
             "unavailable": True,
         }
 
-    cache_seconds = max(
-        0,
-        int(getattr(settings, "POWER_AUTOMATE_LOOKUP_CACHE_SECONDS", 60)),
-    )
-    cache_key = _studio_assignment_cache_key(employee_id)
-
-    if cache_seconds:
-        cached = cache.get(cache_key)
-        if isinstance(cached, dict):
-            return dict(cached)
-
     body = json.dumps({"hibob_id": str(employee_id)}).encode("utf-8")
     headers = {
         "Content-Type": "application/json",
@@ -260,7 +244,7 @@ def fetch_studio_assignment(employee_id: str, employee_name: str = "") -> dict:
         headers["X-ARRISE-API-Key"] = api_key
 
     request = Request(flow_url, data=body, headers=headers, method="POST")
-    timeout = max(1, int(getattr(settings, "POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS", 5)))
+    timeout = max(1, int(getattr(settings, "POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS", 15)))
 
     try:
         with urlopen(request, timeout=timeout) as response:
@@ -268,10 +252,7 @@ def fetch_studio_assignment(employee_id: str, employee_name: str = "") -> dict:
             if not 200 <= response.getcode() < 300:
                 raise ValueError(f"Power Automate returned HTTP {response.getcode()}.")
         payload = json.loads(raw)
-        result = parse_studio_assignment(payload, str(employee_id), employee_name)
-        if cache_seconds:
-            cache.set(cache_key, result, timeout=cache_seconds)
-        return result
+        return parse_studio_assignment(payload, str(employee_id), employee_name)
     except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as exc:
         logger.warning("Studio assignment lookup failed for employee %s: %s", employee_id, exc)
         return {
