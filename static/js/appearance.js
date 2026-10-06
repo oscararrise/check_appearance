@@ -65,6 +65,27 @@
         'Registered': 'REGISTERED',
     }[value] || String(value || '').toUpperCase());
 
+    const ensureOperationalContextGrid = () => {
+        let grid = document.getElementById('employee-operational-grid');
+        if (grid) return grid;
+
+        grid = document.createElement('div');
+        grid.id = 'employee-operational-grid';
+        grid.className = 'employee-operational-grid';
+        grid.setAttribute('aria-label', 'Employee operational context');
+
+        const employeeHead = employeeCard.querySelector('.employee-head');
+        const dataGrid = employeeCard.querySelector('.employee-data-grid');
+        employeeHead?.insertAdjacentElement('afterend', grid);
+
+        const studioPanel = dataGrid?.querySelector('.studio-assignment-panel');
+        const medicalPanel = dataGrid?.querySelector('.medical-panel');
+        if (studioPanel) grid.appendChild(studioPanel);
+        if (medicalPanel) grid.appendChild(medicalPanel);
+
+        return grid;
+    };
+
     const ensureLatestRecordPanel = () => {
         let panel = document.getElementById('latest-record-panel');
         if (panel) return panel;
@@ -85,7 +106,7 @@
             </div>
             <div id="latest-record-content" class="latest-record-content"></div>
         `;
-        employeeCard.querySelector('.employee-head')?.insertAdjacentElement('afterend', panel);
+        ensureOperationalContextGrid().prepend(panel);
         return panel;
     };
 

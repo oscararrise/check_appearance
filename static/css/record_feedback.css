@@ -198,3 +198,130 @@
         max-width: none;
     }
 }
+
+/* Compact operational context: latest record + studio + medical */
+.employee-operational-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: stretch;
+    padding: 12px;
+    background: #f8f6fb;
+}
+
+.employee-operational-grid > .latest-record-panel,
+.employee-operational-grid > .data-panel {
+    min-width: 0;
+    height: 100%;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.employee-operational-grid > .studio-assignment-panel,
+.employee-operational-grid > .medical-panel {
+    grid-column: auto;
+    padding: 18px;
+}
+
+.employee-operational-grid .latest-record-panel {
+    padding: 18px;
+}
+
+.employee-operational-grid .latest-record-heading,
+.employee-operational-grid .data-panel-heading {
+    align-items: flex-start;
+}
+
+.employee-operational-grid .latest-record-heading h3,
+.employee-operational-grid .data-panel-heading h3 {
+    font-size: 15px;
+    line-height: 1.25;
+}
+
+.employee-operational-grid .latest-record-content {
+    margin-top: 12px;
+}
+
+.employee-operational-grid .latest-record-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.employee-operational-grid .latest-record-facts > div,
+.employee-operational-grid .latest-record-comment {
+    padding: 10px 11px;
+}
+
+.employee-operational-grid .latest-record-comment {
+    margin-top: 7px;
+}
+
+.employee-operational-grid .studio-assignment-summary {
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.employee-operational-grid .studio-assignment-fact {
+    min-height: 64px;
+    padding: 10px 11px;
+}
+
+.employee-operational-grid .studio-assignment-fact span {
+    margin-bottom: 4px;
+    font-size: 9px;
+}
+
+.employee-operational-grid .studio-assignment-fact strong {
+    font-size: 12px;
+}
+
+.employee-operational-grid .studio-assignment-empty,
+.employee-operational-grid .medical-summary {
+    margin-top: 12px;
+    padding: 12px 13px;
+    font-size: 12px;
+}
+
+.employee-operational-grid .medical-panel:has(.medical-summary.flagged) {
+    background: linear-gradient(180deg, #fff8f7 0%, #fff 48%);
+    border-color: #f0b4ad !important;
+    box-shadow: inset 4px 0 0 #d83a32;
+}
+
+.employee-operational-grid .medical-panel:has(.medical-summary.clear) {
+    background: linear-gradient(180deg, #f5fcf8 0%, #fff 48%);
+    border-color: #b8e0c7 !important;
+    box-shadow: inset 4px 0 0 #198754;
+}
+
+.employee-operational-grid .medical-panel:has(.medical-summary.unknown) {
+    background: linear-gradient(180deg, #f6f9ff 0%, #fff 48%);
+    border-color: #bfd3f4 !important;
+    box-shadow: inset 4px 0 0 #3f72c8;
+}
+
+@media (max-width: 980px) {
+    .employee-operational-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .employee-operational-grid > .latest-record-panel {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 680px) {
+    .employee-operational-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+
+    .employee-operational-grid > .latest-record-panel {
+        grid-column: auto;
+    }
+
+    .employee-operational-grid .latest-record-facts,
+    .employee-operational-grid .studio-assignment-summary {
+        grid-template-columns: 1fr;
+    }
+}
