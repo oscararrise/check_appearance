@@ -126,3 +126,24 @@ CARD_RESOLVER_ENABLED = os.getenv("CARD_RESOLVER_ENABLED", "False").lower() in {
 CARD_RESOLVER_URL = os.getenv("CARD_RESOLVER_URL", "").strip()
 CARD_RESOLVER_SERVICE_TOKEN = os.getenv("CARD_RESOLVER_SERVICE_TOKEN", "").strip()
 CARD_RESOLVER_TIMEOUT_SECONDS = int(os.getenv("CARD_RESOLVER_TIMEOUT_SECONDS", "5"))
+
+
+# Application performance/operational logs are written to stdout so Gunicorn
+# and systemd/journald can capture LOOKUP_PERF without changing endpoints.
+DJANGO_LOG_LEVEL = os.getenv("DJANGO_LOG_LEVEL", "INFO").upper()
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "appearance": {
+            "handlers": ["console"],
+            "level": DJANGO_LOG_LEVEL,
+            "propagate": False,
+        },
+    },
+}

@@ -235,6 +235,12 @@ def workspace(request, process):
     )
 
 
+def _timed_studio_assignment(employee_id, employee_name):
+    started = perf_counter()
+    result = fetch_studio_assignment(employee_id, employee_name)
+    return result, (perf_counter() - started) * 1000
+
+
 def _load_local_lookup_context(employee_id, process):
     """
     Load Appearance-owned data on a worker thread while Studio Assignment is
@@ -305,16 +311,14 @@ def lookup_employee(request):
             process,
         )
 
-        studio_started = perf_counter()
         studio_future = executor.submit(
-            fetch_studio_assignment,
+            _timed_studio_assignment,
             identity.employee_id,
             identity.full_name,
         )
 
         local_context = local_future.result()
-        studio_assignment = studio_future.result()
-        studio_ms = (perf_counter() - studio_started) * 1000
+        studio_assignment, studio_ms = studio_future.result()
 
     profile = build_employee_profile(
         identity,

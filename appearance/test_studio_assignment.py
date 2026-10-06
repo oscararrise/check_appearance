@@ -181,6 +181,33 @@ class StudioAssignmentParserTests(SimpleTestCase):
         self.assertEqual(result["game"], "BJ/TP/RW/VIP/MW")
 
     @override_settings(
+        POWER_AUTOMATE_LOOKUP_ENABLED=False,
+        POWER_AUTOMATE_LOOKUP_FLOW_URL="https://example.invalid/studio",
+        POWER_AUTOMATE_LOOKUP_CACHE_SECONDS=60,
+    )
+    def test_disabled_lookup_does_not_return_cached_assignment(self):
+        cache.clear()
+        cache.set(
+            "appearance:studio-assignment:v1:47827",
+            {
+                "found": True,
+                "studio": "7.3",
+                "assignment_type": "Generic",
+                "game": "BJ",
+                "studio_title": "7.3 Generic",
+                "source_table": "Table2",
+            },
+            timeout=60,
+        )
+
+        result = fetch_studio_assignment("47827", "Sara Espitia Alonso")
+
+        self.assertFalse(result["found"])
+        self.assertTrue(result["unavailable"])
+        cache.clear()
+
+
+    @override_settings(
         POWER_AUTOMATE_LOOKUP_ENABLED=True,
         POWER_AUTOMATE_LOOKUP_FLOW_URL="https://example.invalid/studio",
         POWER_AUTOMATE_LOOKUP_API_KEY="",

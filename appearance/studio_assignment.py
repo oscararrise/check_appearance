@@ -213,17 +213,6 @@ def _studio_assignment_cache_key(employee_id: str) -> str:
 
 
 def fetch_studio_assignment(employee_id: str, employee_name: str = "") -> dict:
-    cache_seconds = max(
-        0,
-        int(getattr(settings, "POWER_AUTOMATE_LOOKUP_CACHE_SECONDS", 60)),
-    )
-    cache_key = _studio_assignment_cache_key(employee_id)
-
-    if cache_seconds:
-        cached = cache.get(cache_key)
-        if isinstance(cached, dict):
-            return dict(cached)
-
     if not getattr(settings, "POWER_AUTOMATE_LOOKUP_ENABLED", False):
         return {
             "found": False,
@@ -248,6 +237,17 @@ def fetch_studio_assignment(employee_id: str, employee_name: str = "") -> dict:
             "unavailable": True,
         }
 
+    cache_seconds = max(
+        0,
+        int(getattr(settings, "POWER_AUTOMATE_LOOKUP_CACHE_SECONDS", 60)),
+    )
+    cache_key = _studio_assignment_cache_key(employee_id)
+
+    if cache_seconds:
+        cached = cache.get(cache_key)
+        if isinstance(cached, dict):
+            return dict(cached)
+
     body = json.dumps({"hibob_id": str(employee_id)}).encode("utf-8")
     headers = {
         "Content-Type": "application/json",
@@ -260,7 +260,7 @@ def fetch_studio_assignment(employee_id: str, employee_name: str = "") -> dict:
         headers["X-ARRISE-API-Key"] = api_key
 
     request = Request(flow_url, data=body, headers=headers, method="POST")
-    timeout = max(1, int(getattr(settings, "POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS", 15)))
+    timeout = max(1, int(getattr(settings, "POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS", 5)))
 
     try:
         with urlopen(request, timeout=timeout) as response:
