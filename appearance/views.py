@@ -1,10 +1,12 @@
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, time
+from time import perf_counter
 from io import BytesIO
 
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
+from django.db import close_old_connections, connections, transaction
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -18,6 +20,9 @@ from .power_automate import publish_appearance_check
 from .studio_assignment import fetch_studio_assignment
 from .services import (
     appearance_approval_payload,
+    build_employee_profile,
+    get_employee_appearance_records,
+    get_employee_identity,
     get_employee_profile,
     resolve_operational_shift,
     tattoo_payload,
@@ -230,9 +235,36 @@ def workspace(request, process):
     )
 
 
+def _load_local_lookup_context(employee_id, process):
+    """
+    Load Appearance-owned data on a worker thread while Studio Assignment is
+    waiting on Power Automate. The worker owns and closes its DB connection.
+    """
+    close_old_connections()
+    try:
+        appearance_started = perf_counter()
+        tattoo_records, approval_records = get_employee_appearance_records(employee_id)
+        appearance_ms = (perf_counter() - appearance_started) * 1000
+
+        latest_started = perf_counter()
+        latest_record = _latest_employee_record(employee_id, process)
+        latest_ms = (perf_counter() - latest_started) * 1000
+
+        return {
+            "tattoo_records": tattoo_records,
+            "approval_records": approval_records,
+            "latest_record": latest_record,
+            "appearance_ms": appearance_ms,
+            "latest_ms": latest_ms,
+        }
+    finally:
+        connections.close_all()
+
+
 @login_required
 @require_POST
 def lookup_employee(request):
+    lookup_started = perf_counter()
     payload = _json_body(request)
     lookup_mode = str(payload.get("lookup_mode", "employee_id")).strip().lower()
     employee_id = str(payload.get("employee_id", "")).strip()
@@ -241,26 +273,69 @@ def lookup_employee(request):
     if process not in {"PREPARATION", "CHECK"}:
         process = "CHECK"
 
+    card_ms = 0.0
     card_resolution = None
     if lookup_mode == "card":
+        card_started = perf_counter()
         try:
             card_resolution = resolve_card(card_raw)
         except CardResolverError as exc:
             return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+        finally:
+            card_ms = (perf_counter() - card_started) * 1000
         employee_id = card_resolution.employee_id
     elif lookup_mode != "employee_id":
         return JsonResponse({"ok": False, "error": "Invalid lookup mode."}, status=400)
 
-    profile = get_employee_profile(employee_id)
-    if profile is None:
+    hibob_started = perf_counter()
+    identity = get_employee_identity(employee_id)
+    hibob_ms = (perf_counter() - hibob_started) * 1000
+    if identity is None:
         return JsonResponse(
             {"ok": False, "error": "Employee ID was not found in HiBob."},
             status=404,
         )
 
-    studio_assignment = fetch_studio_assignment(
-        profile.employee_id,
-        profile.full_name,
+    # Power Automate is network-bound. Run it in parallel with the local
+    # Appearance queries so its latency no longer stacks on top of them.
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="appearance-lookup") as executor:
+        local_future = executor.submit(
+            _load_local_lookup_context,
+            identity.employee_id,
+            process,
+        )
+
+        studio_started = perf_counter()
+        studio_future = executor.submit(
+            fetch_studio_assignment,
+            identity.employee_id,
+            identity.full_name,
+        )
+
+        local_context = local_future.result()
+        studio_assignment = studio_future.result()
+        studio_ms = (perf_counter() - studio_started) * 1000
+
+    profile = build_employee_profile(
+        identity,
+        local_context["tattoo_records"],
+        local_context["approval_records"],
+    )
+
+    total_ms = (perf_counter() - lookup_started) * 1000
+    logger.info(
+        (
+            "LOOKUP_PERF employee=%s mode=%s card_ms=%.1f hibob_ms=%.1f "
+            "appearance_ms=%.1f latest_ms=%.1f studio_ms=%.1f total_ms=%.1f"
+        ),
+        identity.employee_id,
+        lookup_mode,
+        card_ms,
+        hibob_ms,
+        local_context["appearance_ms"],
+        local_context["latest_ms"],
+        studio_ms,
+        total_ms,
     )
 
     return JsonResponse(
@@ -273,12 +348,11 @@ def lookup_employee(request):
                 "tattoos": tattoo_payload(profile),
                 "appearance_approvals": appearance_approval_payload(profile),
                 "studio_assignment": studio_assignment,
-                "latest_process_record": _latest_employee_record(profile.employee_id, process),
+                "latest_process_record": local_context["latest_record"],
                 "lookup_source": "card" if card_resolution else "employee_id",
             },
         }
     )
-
 
 @login_required
 @require_POST

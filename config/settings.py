@@ -117,7 +117,8 @@ POWER_AUTOMATE_TIMEOUT_SECONDS = int(os.getenv("POWER_AUTOMATE_TIMEOUT_SECONDS",
 POWER_AUTOMATE_LOOKUP_ENABLED = os.getenv("POWER_AUTOMATE_LOOKUP_ENABLED", "False").lower() in {"1", "true", "yes", "on"}
 POWER_AUTOMATE_LOOKUP_FLOW_URL = os.getenv("POWER_AUTOMATE_LOOKUP_FLOW_URL", "").strip()
 POWER_AUTOMATE_LOOKUP_API_KEY = os.getenv("POWER_AUTOMATE_LOOKUP_API_KEY", "").strip()
-POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS = int(os.getenv("POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS", "15"))
+POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS = int(os.getenv("POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS", "5"))
+POWER_AUTOMATE_LOOKUP_CACHE_SECONDS = int(os.getenv("POWER_AUTOMATE_LOOKUP_CACHE_SECONDS", "60"))
 
 # Card Resolver API used server-side for physical badge scans.
 # The service token must never be exposed to templates or browser JavaScript.

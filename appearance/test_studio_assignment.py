@@ -1,6 +1,10 @@
-from django.test import SimpleTestCase
+import json
+from unittest.mock import MagicMock, patch
 
-from .studio_assignment import parse_studio_assignment
+from django.core.cache import cache
+from django.test import SimpleTestCase, override_settings
+
+from .studio_assignment import fetch_studio_assignment, parse_studio_assignment
 
 
 class StudioAssignmentParserTests(SimpleTestCase):
@@ -175,3 +179,39 @@ class StudioAssignmentParserTests(SimpleTestCase):
         self.assertEqual(result["studio"], "7.10")
         self.assertEqual(result["assignment_type"], "Generic")
         self.assertEqual(result["game"], "BJ/TP/RW/VIP/MW")
+
+    @override_settings(
+        POWER_AUTOMATE_LOOKUP_ENABLED=True,
+        POWER_AUTOMATE_LOOKUP_FLOW_URL="https://example.invalid/studio",
+        POWER_AUTOMATE_LOOKUP_API_KEY="",
+        POWER_AUTOMATE_LOOKUP_TIMEOUT_SECONDS=5,
+        POWER_AUTOMATE_LOOKUP_CACHE_SECONDS=60,
+    )
+    def test_fetch_studio_assignment_uses_short_cache(self):
+        cache.clear()
+        payload = {
+            "hibob_id": "47827",
+            "table_found": "Table2",
+            "data": [
+                {
+                    "ID": "47827",
+                    "7_x002e_1 Spanish (LIVE) Generic": "Sara Espitia Alonso BJ/SP BJ/FBJ",
+                },
+            ],
+        }
+
+        response = MagicMock()
+        response.read.return_value = json.dumps(payload).encode("utf-8")
+        response.getcode.return_value = 200
+        context = MagicMock()
+        context.__enter__.return_value = response
+
+        with patch("appearance.studio_assignment.urlopen", return_value=context) as mocked_urlopen:
+            first = fetch_studio_assignment("47827", "Sara Espitia Alonso")
+            second = fetch_studio_assignment("47827", "Sara Espitia Alonso")
+
+        self.assertTrue(first["found"])
+        self.assertEqual(first, second)
+        self.assertEqual(mocked_urlopen.call_count, 1)
+        cache.clear()
+

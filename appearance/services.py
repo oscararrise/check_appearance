@@ -5,6 +5,13 @@ from .models import AppearanceApprovalRecord, HiBobEmployee, TattooRecord
 
 
 @dataclass(frozen=True)
+class EmployeeIdentity:
+    employee_id: str
+    full_name: str
+    role: str
+
+
+@dataclass(frozen=True)
 class EmployeeProfile:
     employee_id: str
     full_name: str
@@ -44,26 +51,46 @@ def get_hibob_employee(employee_id):
     return active or employees.first()
 
 
-def get_employee_profile(employee_id):
+def get_employee_identity(employee_id):
     employee = get_hibob_employee(employee_id)
     if employee is None:
         return None
 
-    name = (employee.full_name or employee.display_name or "Employee").strip()
-    role = (employee.role or employee.raw_role or "Role not available").strip()
-    tattoos = list(TattooRecord.objects.filter(employee_id=employee.employee_id, is_active=True))
-    approvals = list(
-        AppearanceApprovalRecord.objects.filter(employee_id=employee.employee_id, is_active=True)
-        .order_by("situation", "id")
+    return EmployeeIdentity(
+        employee_id=employee.employee_id,
+        full_name=(employee.full_name or employee.display_name or "Employee").strip(),
+        role=(employee.role or employee.raw_role or "Role not available").strip(),
     )
 
-    return EmployeeProfile(
-        employee_id=employee.employee_id,
-        full_name=name,
-        role=role,
-        tattoo_records=tattoos,
-        appearance_approval_records=approvals,
+
+def get_employee_appearance_records(employee_id):
+    tattoos = list(
+        TattooRecord.objects.filter(employee_id=employee_id, is_active=True)
     )
+    approvals = list(
+        AppearanceApprovalRecord.objects.filter(employee_id=employee_id, is_active=True)
+        .order_by("situation", "id")
+    )
+    return tattoos, approvals
+
+
+def build_employee_profile(identity, tattoo_records, approval_records):
+    return EmployeeProfile(
+        employee_id=identity.employee_id,
+        full_name=identity.full_name,
+        role=identity.role,
+        tattoo_records=tattoo_records,
+        appearance_approval_records=approval_records,
+    )
+
+
+def get_employee_profile(employee_id):
+    identity = get_employee_identity(employee_id)
+    if identity is None:
+        return None
+
+    tattoos, approvals = get_employee_appearance_records(identity.employee_id)
+    return build_employee_profile(identity, tattoos, approvals)
 
 
 def resolve_operational_shift(local_dt):
