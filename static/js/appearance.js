@@ -76,7 +76,9 @@
 
         const employeeHead = employeeCard.querySelector('.employee-head');
         const dataGrid = employeeCard.querySelector('.employee-data-grid');
-        employeeHead?.insertAdjacentElement('afterend', grid);
+        employeeCard.prepend(grid);
+
+        if (employeeHead) grid.appendChild(employeeHead);
 
         const studioPanel = dataGrid?.querySelector('.studio-assignment-panel');
         const medicalPanel = dataGrid?.querySelector('.medical-panel');
@@ -106,7 +108,13 @@
             </div>
             <div id="latest-record-content" class="latest-record-content"></div>
         `;
-        ensureOperationalContextGrid().prepend(panel);
+        const operationalGrid = ensureOperationalContextGrid();
+        const employeeProfile = operationalGrid.querySelector('.employee-head');
+        if (employeeProfile) {
+            employeeProfile.insertAdjacentElement('afterend', panel);
+        } else {
+            operationalGrid.prepend(panel);
+        }
         return panel;
     };
 
