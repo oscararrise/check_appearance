@@ -77,6 +77,8 @@ Example body sent by Django:
 
 For `NOT_READY` or `DECLINED`, `not_ready_declined` contains `Not Ready` or `Declined`. For `READY`, that value is blank.
 
+Late status remains part of the local Appearance Check audit record, but it is not sent to Power Automate as separate `late*` fields. When a person is marked late, the outbound `comment` is `Late` when there is no manual comment, or `Late | <manual comment>` when an operator also entered a comment. On-time records keep the manual comment unchanged.
+
 ## 2. Excel mapping
 
 The workbook range must be an actual **Excel Table** for the Excel Online (Business) connector to update rows reliably.
