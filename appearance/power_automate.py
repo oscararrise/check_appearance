@@ -1,5 +1,6 @@
 import json
 import logging
+from zoneinfo import ZoneInfo
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -23,7 +24,10 @@ def build_appearance_check_payload(check: AppearanceCheck) -> dict:
 
     flow_comment = check.comment or ""
     if check.is_late:
-        flow_comment = "Late" if not flow_comment else f"Late | {flow_comment}"
+        marked_at = check.late_marked_at or check.recorded_at
+        colombia_time = timezone.localtime(marked_at, ZoneInfo("America/Bogota")).strftime("%H:%M:%S")
+        late_comment = f"Late - {colombia_time}"
+        flow_comment = late_comment if not flow_comment else f"{late_comment} | {flow_comment}"
 
     return {
         "event": "appearance_check.recorded",
