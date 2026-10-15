@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone as datetime_timezone
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
@@ -22,7 +23,7 @@ class PowerAutomateIntegrationTests(TestCase):
             shift="AFTERNOON",
             status=AppearanceCheck.Status.NOT_READY,
             is_late=True,
-            late_marked_at=timezone.now(),
+            late_marked_at=datetime(2026, 10, 14, 18, 25, 30, tzinfo=datetime_timezone.utc),
             comment="Hair correction required.",
             recorded_by=self.user,
         )
@@ -35,13 +36,31 @@ class PowerAutomateIntegrationTests(TestCase):
         self.assertEqual(payload["appearance_check_code"], "NOT_READY")
         self.assertFalse(payload["is_ready"])
         self.assertEqual(payload["not_ready_declined"], "Not Ready")
-        self.assertEqual(payload["comment"], "Hair correction required.")
-        self.assertTrue(payload["late"])
-        self.assertEqual(payload["late_label"], "Late")
-        self.assertTrue(payload["late_marked_at"])
-        self.assertTrue(payload["late_marked_time"])
+        self.assertEqual(payload["comment"], "Late - 13:25:30 | Hair correction required.")
+        self.assertNotIn("late", payload)
+        self.assertNotIn("late_label", payload)
+        self.assertNotIn("late_marked_at", payload)
+        self.assertNotIn("late_marked_time", payload)
         self.assertEqual(payload["fs_input"], "")
         self.assertEqual(payload["comment_update_final_check"], "")
+
+    def test_late_without_manual_comment_sends_only_late_comment(self):
+        self.check.comment = ""
+        payload = build_appearance_check_payload(self.check)
+
+        self.assertEqual(payload["comment"], "Late - 13:25:30")
+
+    def test_late_time_falls_back_to_record_timestamp(self):
+        self.check.late_marked_at = None
+        self.check.recorded_at = datetime(2026, 10, 14, 12, 10, 9, tzinfo=datetime_timezone.utc)
+        self.assertEqual(build_appearance_check_payload(self.check)["comment"], "Late - 07:10:09 | Hair correction required.")
+
+    def test_on_time_preserves_manual_comment(self):
+        self.check.is_late = False
+        self.check.late_marked_at = None
+        payload = build_appearance_check_payload(self.check)
+
+        self.assertEqual(payload["comment"], "Hair correction required.")
 
     @override_settings(POWER_AUTOMATE_ENABLED=False, POWER_AUTOMATE_FLOW_URL="")
     def test_disabled_integration_is_audited_without_network_call(self):
@@ -74,6 +93,7 @@ class PowerAutomateIntegrationTests(TestCase):
         sent_payload = json.loads(request.data.decode("utf-8"))
         self.assertEqual(sent_payload["employee_id"], "49105")
         self.assertEqual(sent_payload["not_ready_declined"], "Not Ready")
+        self.assertEqual(sent_payload["comment"], "Late - 13:25:30 | Hair correction required.")
 
 
 class AppearanceCheckLateFieldTests(TestCase):
