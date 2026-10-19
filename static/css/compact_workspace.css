@@ -1,0 +1,83 @@
+/* Compact operational workspace for both PREPARATION and CHECK.
+   Layout-only overrides: no card reader, lookup, save or schedule behavior changed. */
+.workspace-header-inner {padding-top:10px!important;padding-bottom:8px!important}
+.workspace-brand-row {padding-bottom:7px!important}
+.workspace-header .workspace-title-row {padding-top:8px!important;gap:10px;align-items:center}
+.workspace-title-line h1 {font-size:clamp(21px,2vw,29px)}
+.workspace-subtitle {font-size:11px;margin-top:3px}
+.back-link {margin-bottom:3px}
+.workflow-steps {gap:5px}
+.workflow-step {font-size:10px;padding:5px 8px}
+.schedule-strip-shell {width:min(100%,1400px);padding:0 28px 9px;margin:0 auto}
+.schedule-card-horizontal {display:flex;flex-wrap:wrap;align-items:center;gap:8px;border:0;box-shadow:none;background:transparent;padding:0;border-radius:0}
+.schedule-strip-head {gap:7px}
+.schedule-strip-title {gap:5px}
+.schedule-strip-title > .section-icon {display:none}
+.schedule-strip-title h2 {font-size:10px;color:#e4d8fc}
+.schedule-strip-title .eyebrow,.schedule-strip-title p:last-child {display:none}
+.schedule-horizontal-list {gap:6px;padding:0;overflow-x:auto}
+.schedule-horizontal-list .schedule-tile {display:flex;flex:0 0 auto;min-width:0;gap:5px;padding:3px 7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:7px}
+.schedule-horizontal-list .schedule-tile:last-child {border-color:rgba(255,255,255,.15)}
+.schedule-horizontal-list .schedule-tile .shift-dot {width:5px;height:5px}
+.schedule-tile-copy strong {font-size:10px;color:#fff}
+.schedule-tile-copy small {display:none}
+.schedule-horizontal-list .schedule-tile time {padding:0;border:0;background:transparent;color:#e3d8f9;font-size:10px}
+.schedule-card-horizontal .btn-small {min-height:25px;padding:0 9px;font-size:10px}
+.schedule-editor-horizontal {flex-basis:100%;background:#fff;border-radius:10px;padding:12px}
+.workspace-layout-wide {padding-top:10px!important}
+.workspace-layout-wide .main-column {gap:10px}
+.scanner-card {padding:13px 16px!important}
+.scanner-card .scanner-accent {display:none}
+.scanner-card .section-heading h2 {font-size:17px}
+.scanner-card .section-icon {width:31px;height:31px}
+.scanner-card .eyebrow {font-size:9px;margin-bottom:2px}
+.scanner-card #scan-form.scan-row.scan-row-stacked {display:grid!important;grid-template-columns:auto minmax(170px,1fr) minmax(125px,175px);align-items:stretch;gap:8px;margin-top:9px}
+.scanner-card #scan-form .lookup-mode-control {order:0;align-self:stretch;align-items:center;gap:4px}
+.scanner-card #scan-form .lookup-mode-btn {min-height:42px;padding:0 10px;font-size:11px}
+.scanner-card #scan-form .scan-input-wrap {order:0;width:100%}
+.scanner-card #scan-form .scan-field-label {top:6px;left:36px;font-size:8px}
+.scanner-card #scan-form .scan-input-icon {left:12px;font-size:17px}
+.scanner-card #scan-form .scan-input {min-height:44px;height:44px;padding:13px 10px 4px 36px;font-size:18px;border-radius:10px}
+.scanner-card #scan-form .scan-input::placeholder {font-size:16px}
+.scanner-card #scan-form .scan-button {order:0;min-height:44px;height:44px;padding:0 12px;font-size:12px;border-radius:10px}
+.scanner-helper-row .helper {margin:5px 0 0;font-size:10px}
+.scanner-helper-row .keyboard-hint {font-size:8px}
+.scanner-card .alert {margin-top:6px;padding:7px 10px;font-size:11px}
+#employee-card.employee-card {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:stretch;gap:8px;padding:9px!important}
+#employee-card.employee-card.hidden {display:none!important}
+/* JavaScript wraps four cards in the operational grid; flatten the wrappers visually. */
+#employee-card .employee-operational-grid,#employee-card .employee-data-grid {display:contents!important}
+#employee-card .employee-head,#employee-card .latest-record-panel,#employee-card .employee-data-section {grid-column:auto!important;min-width:0;margin:0!important;padding:10px!important;border-radius:13px!important;height:auto}
+#employee-card .employee-head {display:flex!important;flex-wrap:wrap;align-content:start;gap:6px;border:1px solid #e4dcf2}
+#employee-card .employee-head .avatar {width:30px;height:30px;font-size:12px;border-radius:9px}
+#employee-card .employee-head .employee-identity {min-width:0;flex:1 1 110px}
+#employee-card .employee-head .employee-identity h2 {white-space:normal;overflow-wrap:anywhere;font-size:13px;line-height:1.2}
+#employee-card .employee-head .employee-meta {flex-wrap:wrap;font-size:10px}
+#employee-card .employee-head .profile-source {font-size:9px;padding:3px 6px}
+#employee-card .data-panel-heading,#employee-card .latest-record-title {gap:6px;align-items:flex-start}
+#employee-card .data-panel-icon {width:25px;height:25px;min-width:25px;border-radius:7px;font-size:10px}
+#employee-card .eyebrow {font-size:8px;letter-spacing:.07em;margin-bottom:2px}
+#employee-card .data-panel-heading h3,#employee-card .latest-record-heading h3 {font-size:11px;line-height:1.3;overflow-wrap:anywhere}
+#employee-card .latest-record-heading {gap:4px}
+#employee-card .latest-record-content,#employee-card .studio-assignment-summary {margin-top:6px}
+#employee-card .latest-record-facts {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+#employee-card .latest-record-facts>div,#employee-card .latest-record-comment,#employee-card .studio-assignment-fact {padding:5px!important;font-size:10px;min-width:0;overflow-wrap:anywhere}
+#employee-card .latest-record-facts strong,#employee-card .studio-assignment-fact strong {font-size:10px}
+#employee-card .studio-assignment-empty,#employee-card .medical-summary,#employee-card .tattoo-summary,#employee-card .approval-summary {margin-top:6px;padding:7px!important;font-size:10px;line-height:1.45;overflow-wrap:anywhere}
+#employee-card .medical-records,#employee-card .tattoo-records,#employee-card .approval-records {font-size:10px;overflow-wrap:anywhere}
+#employee-card .check-panel {grid-column:1/-1;margin-top:5px}
+@media(max-width:1150px) {
+ #employee-card.employee-card {grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:780px) {
+ .schedule-strip-shell {padding:0 14px 8px}
+ .workspace-header .workspace-title-row {align-items:flex-start}
+ .scanner-card #scan-form.scan-row.scan-row-stacked {grid-template-columns:1fr minmax(110px,140px)}
+ .scanner-card #scan-form .lookup-mode-control {grid-column:1/-1}
+ #employee-card.employee-card {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px) {
+ .scanner-card #scan-form.scan-row.scan-row-stacked {grid-template-columns:1fr}
+ .scanner-card #scan-form .lookup-mode-control {grid-column:auto}
+ #employee-card.employee-card {grid-template-columns:1fr}
+}
