@@ -128,3 +128,44 @@ class AppearanceCheckLateFieldTests(TestCase):
         )
         self.assertFalse(check.is_late)
         self.assertIsNone(check.late_marked_at)
+
+
+class CardRegistrationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="card-operator", password="test-password")
+        self.url = "/api/cards/register/"
+
+    @patch("appearance.views.register_card")
+    def test_authenticated_operator_can_register_without_hibob_lookup(self, mocked_register):
+        mocked_register.return_value = {"status": "created", "hibob_id": "43052"}
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, data=json.dumps({"card_raw": "37744611008", "hibob_id": "43052"}),
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        mocked_register.assert_called_once_with("37744611008", "43052")
+
+    @patch("appearance.views.register_card")
+    def test_unauthenticated_operator_cannot_register(self, mocked_register):
+        response = self.client.post(self.url, data=json.dumps({"card_raw": "37744611008", "hibob_id": "43052"}),
+                                    content_type="application/json")
+        self.assertNotEqual(response.status_code, 200)
+        mocked_register.assert_not_called()
+
+    @patch("appearance.views.register_card")
+    def test_invalid_id_is_blocked(self, mocked_register):
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, data=json.dumps({"card_raw": "37744611008", "hibob_id": "ABC"}),
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        mocked_register.assert_not_called()
+
+    @patch("appearance.views.resolve_card")
+    def test_unknown_card_produces_distinct_code(self, mocked_resolve):
+        from .card_resolver import CardNotFoundError
+        mocked_resolve.side_effect = CardNotFoundError("Card not found.")
+        self.client.force_login(self.user)
+        response = self.client.post("/api/employee/lookup/",
+                                    data=json.dumps({"lookup_mode": "card", "card_raw": "37744611008"}),
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["code"], "CARD_NOT_FOUND")
