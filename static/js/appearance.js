@@ -21,6 +21,16 @@
     let selectedLate = null;
     let saveToastTimer = null;
     let lookupMode = 'card';
+    const unknownModal = document.getElementById('unknown-card-modal');
+    const unknownForm = document.getElementById('unknown-card-form');
+    const unknownRaw = document.getElementById('unknown-card-raw');
+    const unknownHibob = document.getElementById('unknown-card-hibob');
+    const unknownError = document.getElementById('unknown-card-error');
+    const unknownSubmit = document.getElementById('unknown-card-submit');
+    const unknownCancel = document.getElementById('unknown-card-cancel');
+    let pendingCard = '';
+    let scanBusy = false;
+    let mappingBusy = false;
 
     const csrfToken = () => {
         const name = 'csrftoken=';
@@ -38,7 +48,11 @@
             body: JSON.stringify(payload),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Request failed.');
+        if (!response.ok) {
+            const error = new Error(data.error || 'Request failed.');
+            error.code = data.code;
+            throw error;
+        }
         return data;
     };
 
@@ -466,40 +480,117 @@
         });
     });
 
-    scanForm.addEventListener('submit', async (event) => {
+
+    const closeUnknownCard = () => {
+        if (mappingBusy) return;
+        pendingCard = '';
+        unknownModal.classList.add('hidden');
+        unknownForm.reset();
+        unknownError.classList.add('hidden');
+        input.focus();
+    };
+    unknownCancel.addEventListener('click', closeUnknownCard);
+    unknownModal.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !mappingBusy) {
+            event.preventDefault();
+            closeUnknownCard();
+        }
+        if (event.key === 'Tab') {
+            const focusable = [unknownHibob, unknownCancel, unknownSubmit];
+            const index = focusable.indexOf(document.activeElement);
+            if (event.shiftKey && index === 0) { event.preventDefault(); unknownSubmit.focus(); }
+            if (!event.shiftKey && index === focusable.length - 1) { event.preventDefault(); unknownHibob.focus(); }
+        }
+    });
+    const openUnknownCard = raw => {
+        pendingCard = raw;
+        unknownRaw.value = raw;
+        unknownError.classList.add('hidden');
+        unknownModal.classList.remove('hidden');
+        unknownHibob.value = '';
+        unknownHibob.focus();
+    };
+
+    const lookupAndContinue = async (lookupValue, mode) => {
+        const lookupPayload = mode === 'card'
+            ? { lookup_mode: 'card', card_raw: lookupValue, process }
+            : { lookup_mode: 'employee_id', employee_id: lookupValue, process };
+        const result = await postJson(shell.dataset.lookupUrl, lookupPayload);
+        renderEmployee(result.employee);
+        resetCheckSelection();
+        if (process === 'PREPARATION') {
+            const saved = await postJson(shell.dataset.preparationUrl, { employee_id: result.employee.employee_id });
+            prependHistory(saved.record, false);
+            renderLatestRecord(saved.record);
+            showRecordSavedToast(saved.record);
+            showMessage('Record saved. Appearance Preparation registration completed.', 'success');
+        } else {
+            showMessage(`${result.employee.full_name} loaded. Select an Appearance status.`, 'success');
+        }
+    };
+
+    scanForm.addEventListener('submit', async event => {
         event.preventDefault();
+        if (scanBusy || !unknownModal.classList.contains('hidden')) return;
         const lookupValue = input.value.trim();
         if (!lookupValue) {
             showMessage(lookupMode === 'card' ? 'Scan a card.' : 'Enter an Employee ID.', 'error');
             input.focus();
             return;
         }
-
-        showMessage(lookupMode === 'card' ? 'Resolving card and loading employee data…' : 'Searching HiBob, studio assignment and Appearance data…', 'info');
+        const mode = lookupMode;
+        scanBusy = true;
+        showMessage(mode === 'card' ? 'Resolving card and loading employee data…' : 'Searching HiBob, studio assignment and Appearance data…', 'info');
         try {
-            const lookupPayload = lookupMode === 'card'
-                ? { lookup_mode: 'card', card_raw: lookupValue, process }
-                : { lookup_mode: 'employee_id', employee_id: lookupValue, process };
-            const result = await postJson(shell.dataset.lookupUrl, lookupPayload);
-            renderEmployee(result.employee);
-            resetCheckSelection();
-
-            if (process === 'PREPARATION') {
-                const saved = await postJson(shell.dataset.preparationUrl, { employee_id: result.employee.employee_id });
-                prependHistory(saved.record, false);
-                renderLatestRecord(saved.record);
-                showRecordSavedToast(saved.record);
-                showMessage('Record saved. Appearance Preparation registration completed.', 'success');
-            } else {
-                showMessage(`${result.employee.full_name} loaded. Select an Appearance status.`, 'success');
-            }
+            await lookupAndContinue(lookupValue, mode);
         } catch (error) {
             currentEmployee = null;
             employeeCard.classList.add('hidden');
-            showMessage(error.message, 'error');
+            resetCheckSelection();
+            if (mode === 'card' && error.code === 'CARD_NOT_FOUND') {
+                openUnknownCard(lookupValue);
+                showMessage('Card not registered. Enter the HiBob ID to continue.', 'info');
+            } else {
+                showMessage(error.message, 'error');
+            }
         } finally {
+            scanBusy = false;
             input.value = '';
-            input.focus();
+            if (unknownModal.classList.contains('hidden')) input.focus();
+        }
+    });
+
+    unknownForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (mappingBusy || !pendingCard) return;
+        const card = pendingCard;
+        const hibobId = unknownHibob.value.trim();
+        if (!/^\d+$/.test(hibobId)) {
+            unknownError.textContent = 'Enter a numeric HiBob ID.';
+            unknownError.classList.remove('hidden');
+            return;
+        }
+        mappingBusy = true;
+        unknownSubmit.disabled = true;
+        unknownCancel.disabled = true;
+        unknownError.classList.add('hidden');
+        try {
+            await postJson(shell.dataset.cardRegisterUrl, { card_raw: card, hibob_id: hibobId });
+            mappingBusy = false;
+            closeUnknownCard();
+            showMessage('Card registered. Loading employee…', 'info');
+            await lookupAndContinue(card, 'card');
+        } catch (error) {
+            if (unknownModal.classList.contains('hidden')) {
+                showMessage('Card was saved, but employee lookup could not be completed: ' + error.message, 'error');
+            } else {
+                unknownError.textContent = error.message;
+                unknownError.classList.remove('hidden');
+            }
+        } finally {
+            mappingBusy = false;
+            unknownSubmit.disabled = false;
+            unknownCancel.disabled = false;
         }
     });
 
