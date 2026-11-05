@@ -15,7 +15,7 @@ from django.views.decorators.http import require_GET, require_POST
 from openpyxl import Workbook
 
 from .models import AppearanceCheck, PowerAutomateDelivery, PreparationScan, ProcessSchedule
-from .card_resolver import CardResolverError, resolve_card
+from .card_resolver import CardMappingConflict, CardNotFoundError, CardResolverError, register_card, resolve_card
 from .power_automate import publish_appearance_check
 from .studio_assignment import fetch_studio_assignment
 from .services import (
@@ -285,6 +285,8 @@ def lookup_employee(request):
         card_started = perf_counter()
         try:
             card_resolution = resolve_card(card_raw)
+        except CardNotFoundError as exc:
+            return JsonResponse({"ok": False, "code": "CARD_NOT_FOUND", "error": str(exc)}, status=404)
         except CardResolverError as exc:
             return JsonResponse({"ok": False, "error": str(exc)}, status=400)
         finally:
@@ -357,6 +359,26 @@ def lookup_employee(request):
             },
         }
     )
+
+@login_required
+@require_POST
+def register_unknown_card(request):
+    payload = _json_body(request)
+    card_raw = str(payload.get("card_raw") or "").strip()
+    hibob_id = str(payload.get("hibob_id") or "").strip()
+    if not card_raw.isdigit() or len(card_raw) > 20:
+        return JsonResponse({"ok": False, "error": "Invalid card reader value."}, status=400)
+    if not hibob_id.isdigit() or len(hibob_id) > 80:
+        return JsonResponse({"ok": False, "error": "Enter a numeric HiBob ID."}, status=400)
+    try:
+        result = register_card(card_raw, hibob_id)
+    except CardMappingConflict as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=409)
+    except CardResolverError as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=502)
+    logger.info("Card mapping %s by operator id=%s", result["status"], request.user.pk)
+    return JsonResponse({"ok": True, "status": result["status"], "hibob_id": hibob_id})
+
 
 @login_required
 @require_POST
