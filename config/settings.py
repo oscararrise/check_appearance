@@ -125,3 +125,8 @@ CARD_RESOLVER_ENABLED = os.getenv("CARD_RESOLVER_ENABLED", "False").lower() in {
 CARD_RESOLVER_URL = os.getenv("CARD_RESOLVER_URL", "").strip()
 CARD_RESOLVER_SERVICE_TOKEN = os.getenv("CARD_RESOLVER_SERVICE_TOKEN", "").strip()
 CARD_RESOLVER_TIMEOUT_SECONDS = int(os.getenv("CARD_RESOLVER_TIMEOUT_SECONDS", "5"))
+
+# Dedicated server-to-server Card Resolver mapping write credentials (HTTP Basic).
+CARD_RESOLVER_UPDATE_URL = os.getenv("CARD_RESOLVER_UPDATE_URL", "").strip()
+CARD_RESOLVER_ADMIN_USER = os.getenv("CARD_RESOLVER_ADMIN_USER", "").strip()
+CARD_RESOLVER_ADMIN_PASSWORD = os.getenv("CARD_RESOLVER_ADMIN_PASSWORD", "").strip()
