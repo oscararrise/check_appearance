@@ -5,6 +5,7 @@
 <div class="workspace-shell"
      data-process="{{ process }}"
      data-lookup-url="{% url 'appearance:lookup_employee' %}"
+     data-card-register-url="{% url 'appearance:register_unknown_card' %}"
      data-preparation-url="{% url 'appearance:record_preparation' %}"
      data-check-url="{% url 'appearance:record_check' %}"
      data-schedule-url="{% url 'appearance:update_schedule' process %}">
@@ -342,5 +343,35 @@
         </article>
     </section>
 </div>
-<script src="{% static 'js/appearance.js' %}?v=20261006-2"></script>
+<div id="unknown-card-modal" class="unknown-card-overlay hidden">
+    <section class="unknown-card-dialog" role="dialog" aria-modal="true" aria-labelledby="unknown-card-title" aria-describedby="unknown-card-description">
+        <h2 id="unknown-card-title">Unregistered card</h2>
+        <p id="unknown-card-description">Card not found. Enter the employee's HiBob ID to register this card.</p>
+        <form id="unknown-card-form">
+            <label for="unknown-card-raw">Scanned card</label>
+            <input id="unknown-card-raw" type="text" readonly>
+            <label for="unknown-card-hibob">HiBob ID</label>
+            <input id="unknown-card-hibob" type="text" inputmode="numeric" pattern="[0-9]+" maxlength="80" autocomplete="off" required>
+            <p id="unknown-card-error" class="unknown-card-error hidden" role="alert"></p>
+            <div class="unknown-card-actions">
+                <button type="button" id="unknown-card-cancel" class="btn btn-soft">Cancel</button>
+                <button type="submit" id="unknown-card-submit" class="btn btn-primary">Save card</button>
+            </div>
+        </form>
+    </section>
+</div>
+<style>
+.unknown-card-overlay { position:fixed; inset:0; z-index:10000; background:rgba(13,10,27,.65); display:flex; align-items:center; justify-content:center; padding:20px; }
+.unknown-card-overlay.hidden { display:none; }
+.unknown-card-dialog { background:#fff; border-radius:18px; width:min(100%,460px); padding:28px; box-shadow:0 20px 65px rgba(0,0,0,.25); color:#1a1424; }
+.unknown-card-dialog h2 { margin:0 0 10px; font-size:24px; }
+.unknown-card-dialog p { line-height:1.5; }
+.unknown-card-dialog label { display:block; font-weight:600; margin:14px 0 7px; }
+.unknown-card-dialog input { display:block; width:100%; box-sizing:border-box; padding:13px; border:1px solid #c8c4d0; border-radius:10px; font:inherit; }
+.unknown-card-dialog input[readonly] { background:#f4f1f9; }
+.unknown-card-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+.unknown-card-error { color:#b42318; }
+.unknown-card-error.hidden { display:none; }
+</style>
+<script src="{% static 'js/appearance.js' %}?v=20261105-1"></script>
 {% endblock %}
