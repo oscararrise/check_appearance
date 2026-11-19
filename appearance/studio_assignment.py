@@ -171,7 +171,7 @@ def parse_studio_assignment(payload: dict, employee_id: str, employee_name: str 
         candidate = rows[index]
         if not isinstance(candidate, dict):
             continue
-        if _row_id(candidate).upper() == "ID":
+        if re.sub(r"[^A-Za-z0-9]", "", _row_id(candidate)).upper() == "ID":
             header_row = candidate
             break
 
