@@ -47,6 +47,25 @@ class StudioAssignmentParserTests(SimpleTestCase):
             "8.5 Spanish Top Card (LIVE) (NO VISIBLE TATTOOS) Dedicated",
         )
 
+    def test_recognizes_punctuated_studio_headers(self):
+        for marker in ("ID.", "ID,", ".ID", "ID/", " ID ", "id", "I.D."):
+            with self.subTest(marker=marker):
+                payload = {
+                    "table_found": "Table2",
+                    "data": [
+                        {"Column1": "ID", "Column2": "6.1 Dedicated"},
+                        {"Column1": "10001", "Column2": "Other User BJ"},
+                        {"Column1": marker, "Column2": "7.1 Spanish (LIVE) Generic"},
+                        {"Column1": "53609", "Column2": "Test User BJ/SP BJ/FBJ"},
+                    ],
+                }
+                result = parse_studio_assignment(payload, "53609", "Test User")
+                self.assertTrue(result["found"])
+                self.assertEqual(result["studio"], "7.1")
+                self.assertEqual(result["assignment_type"], "Generic")
+                self.assertEqual(result["game"], "BJ/SP BJ/FBJ")
+                self.assertEqual(result["studio_title"], "7.1 Spanish (LIVE) Generic")
+
     def test_returns_not_found_when_id_is_missing_from_data(self):
         payload = {
             "hibob_id": "48444",
