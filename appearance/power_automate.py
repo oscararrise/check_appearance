@@ -53,10 +53,29 @@ def build_appearance_check_payload(check: AppearanceCheck) -> dict:
 
 def _safe_http_error_body(exc: HTTPError) -> str:
     try:
-        body = exc.read(500).decode("utf-8", errors="replace").strip()
+        body = exc.read(2048).decode("utf-8", errors="replace").strip()
     except Exception:
         body = ""
     return body
+
+
+def parse_workforce_result(response_status: int | None, body: str) -> dict | None:
+    """Parse explicit Workforce business responses independently from HTTP transport codes."""
+    if not body:
+        return None
+    try:
+        payload = json.loads(body)
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(payload, dict) or payload.get("success") is not False:
+        return None
+    code = payload.get("code")
+    if code not in {"NOT_FOUND", "DUPLICATE"}:
+        return None
+    # Only accept explicit Power Automate business results, not unrelated errors.
+    if response_status not in {200, 400, 404, 409}:
+        return None
+    return {"code": code, "message": str(payload.get("message") or "")[:300]}
 
 
 def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAutomateDelivery:
@@ -95,8 +114,13 @@ def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAut
     try:
         with urlopen(request, timeout=timeout) as response:
             response_status = response.getcode()
+            response_body = response.read(2048).decode("utf-8", errors="replace")
         delivery.response_status = response_status
-        if 200 <= response_status < 300:
+        business_result = parse_workforce_result(response_status, response_body)
+        if business_result:
+            delivery.status = PowerAutomateDelivery.Status.FAILED
+            delivery.last_error = f"HTTP {response_status}: {json.dumps({'success': False, **business_result})}"
+        elif 200 <= response_status < 300:
             delivery.status = PowerAutomateDelivery.Status.SENT
             delivery.sent_at = now
         else:
