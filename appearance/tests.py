@@ -3,11 +3,42 @@ from datetime import datetime, timezone as datetime_timezone
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
 from .models import AppearanceCheck, PowerAutomateDelivery
 from .power_automate import build_appearance_check_payload, publish_appearance_check
+
+
+class PowerAutomateResponseParsingTests(SimpleTestCase):
+    def test_not_found_from_400_response(self):
+        from .power_automate import parse_workforce_result
+        result = parse_workforce_result(
+            400,
+            '{"success": false, "code": "NOT_FOUND", "message": "Employee not found in Workforce."}',
+        )
+        self.assertEqual(result["code"], "NOT_FOUND")
+
+    def test_duplicate_from_409_response(self):
+        from .power_automate import parse_workforce_result
+        result = parse_workforce_result(
+            409,
+            '{"success": false, "code": "DUPLICATE", "message": "Duplicate employee ID."}',
+        )
+        self.assertEqual(result["code"], "DUPLICATE")
+
+    def test_business_error_in_200_response(self):
+        from .power_automate import parse_workforce_result
+        result = parse_workforce_result(
+            200,
+            '{"success": false, "code": "NOT_FOUND", "message": "Employee not found."}',
+        )
+        self.assertEqual(result["code"], "NOT_FOUND")
+
+    def test_unrelated_errors_not_mislabeled(self):
+        from .power_automate import parse_workforce_result
+        self.assertIsNone(parse_workforce_result(504, "Gateway Timeout"))
+        self.assertIsNone(parse_workforce_result(400, '{"error":"Bad Request"}'))
 
 
 class PowerAutomateIntegrationTests(TestCase):
