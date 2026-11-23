@@ -404,7 +404,7 @@ def _workforce_feedback(delivery):
     if delivery.status != PowerAutomateDelivery.Status.FAILED:
         return None
     raw = delivery.last_error or ""
-    if not raw.startswith(("HTTP 404:", "HTTP 409:")):
+    if not raw.startswith(("HTTP 200:", "HTTP 400:", "HTTP 404:", "HTTP 409:")):
         return None
     try:
         payload = json.loads(raw.split(": ", 1)[1])
@@ -414,7 +414,9 @@ def _workforce_feedback(delivery):
         return None
     code = payload.get("code")
     expected_status = {"NOT_FOUND": 404, "DUPLICATE": 409}
-    if code not in expected_status or delivery.response_status != expected_status[code]:
+    if code not in expected_status:
+        return None
+    if delivery.response_status not in {200, 400, expected_status[code]}:
         return None
     return {
         "code": code,
