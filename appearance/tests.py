@@ -35,6 +35,17 @@ class PowerAutomateResponseParsingTests(SimpleTestCase):
         )
         self.assertEqual(result["code"], "NOT_FOUND")
 
+    def test_view_feedback_accepts_http_400_not_found(self):
+        from types import SimpleNamespace
+        from .models import PowerAutomateDelivery
+        from .views import _workforce_feedback
+        delivery = SimpleNamespace(
+            status=PowerAutomateDelivery.Status.FAILED,
+            response_status=400,
+            last_error='HTTP 400: {"success": false, "code": "NOT_FOUND", "message": "Employee not found in Workforce."}',
+        )
+        self.assertEqual(_workforce_feedback(delivery)["code"], "NOT_FOUND")
+
     def test_unrelated_errors_not_mislabeled(self):
         from .power_automate import parse_workforce_result
         self.assertIsNone(parse_workforce_result(504, "Gateway Timeout"))
