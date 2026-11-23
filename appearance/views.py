@@ -399,6 +399,29 @@ def record_preparation(request):
     return JsonResponse({"ok": True, "record": _operational_record_payload(record, "PREPARATION")})
 
 
+def _workforce_feedback(delivery):
+    """Extract an explicit Workforce business error without confusing it with transport failures."""
+    if delivery.status != PowerAutomateDelivery.Status.FAILED:
+        return None
+    raw = delivery.last_error or ""
+    if not raw.startswith(("HTTP 404:", "HTTP 409:")):
+        return None
+    try:
+        payload = json.loads(raw.split(": ", 1)[1])
+    except (ValueError, IndexError):
+        return None
+    if not isinstance(payload, dict) or payload.get("success") is not False:
+        return None
+    code = payload.get("code")
+    expected_status = {"NOT_FOUND": 404, "DUPLICATE": 409}
+    if code not in expected_status or delivery.response_status != expected_status[code]:
+        return None
+    return {
+        "code": code,
+        "message": str(payload.get("message") or "")[:300],
+    }
+
+
 @login_required
 @require_POST
 def record_check(request):
@@ -437,6 +460,7 @@ def record_check(request):
             "status": delivery.status,
             "sent": delivery.status == PowerAutomateDelivery.Status.SENT,
             "attempts": delivery.attempts,
+            "workforce_feedback": _workforce_feedback(delivery),
         }
     except Exception:
         # The operational record is the source of truth. A downstream automation
