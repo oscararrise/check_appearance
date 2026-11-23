@@ -110,7 +110,7 @@ DATA_REJECTED = BASE_DIR / "data" / "rejected"
 POWER_AUTOMATE_ENABLED = os.getenv("POWER_AUTOMATE_ENABLED", "False").lower() in {"1", "true", "yes", "on"}
 POWER_AUTOMATE_FLOW_URL = os.getenv("POWER_AUTOMATE_FLOW_URL", "").strip()
 POWER_AUTOMATE_API_KEY = os.getenv("POWER_AUTOMATE_API_KEY", "").strip()
-POWER_AUTOMATE_TIMEOUT_SECONDS = int(os.getenv("POWER_AUTOMATE_TIMEOUT_SECONDS", "5"))
+POWER_AUTOMATE_TIMEOUT_SECONDS = int(os.getenv("POWER_AUTOMATE_TIMEOUT_SECONDS", "12"))
 
 # Power Automate lookup used while scanning an employee.
 # This is intentionally separate from the outbound Appearance Check delivery flow.
