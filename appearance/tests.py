@@ -96,6 +96,56 @@ class PowerAutomateIntegrationTests(TestCase):
         self.assertEqual(sent_payload["comment"], "Late - 13:25:30 | Hair correction required.")
 
 
+    @override_settings(
+        POWER_AUTOMATE_ENABLED=True,
+        POWER_AUTOMATE_FLOW_URL="https://example.invalid/power-automate",
+        POWER_AUTOMATE_API_KEY="",
+        POWER_AUTOMATE_TIMEOUT_SECONDS=5,
+    )
+    @patch("appearance.power_automate.urlopen")
+    def test_workforce_not_found_is_exposed_as_structured_feedback(self, mocked_urlopen):
+        from io import BytesIO
+        from urllib.error import HTTPError
+        from .views import _workforce_feedback
+        body = b'{"success": false, "code": "NOT_FOUND", "message": "Employee not found in Workforce."}'
+        mocked_urlopen.side_effect = HTTPError("https://example.invalid", 404, "Not Found", {}, BytesIO(body))
+        delivery = publish_appearance_check(self.check)
+        self.assertEqual(delivery.response_status, 404)
+        self.assertEqual(_workforce_feedback(delivery)["code"], "NOT_FOUND")
+
+    @override_settings(
+        POWER_AUTOMATE_ENABLED=True,
+        POWER_AUTOMATE_FLOW_URL="https://example.invalid/power-automate",
+        POWER_AUTOMATE_API_KEY="",
+        POWER_AUTOMATE_TIMEOUT_SECONDS=5,
+    )
+    @patch("appearance.power_automate.urlopen")
+    def test_workforce_duplicate_is_exposed_as_structured_feedback(self, mocked_urlopen):
+        from io import BytesIO
+        from urllib.error import HTTPError
+        from .views import _workforce_feedback
+        body = b'{"success": false, "code": "DUPLICATE", "message": "Employee ID found in multiple Workforce records."}'
+        mocked_urlopen.side_effect = HTTPError("https://example.invalid", 409, "Conflict", {}, BytesIO(body))
+        delivery = publish_appearance_check(self.check)
+        self.assertEqual(delivery.response_status, 409)
+        self.assertEqual(_workforce_feedback(delivery)["code"], "DUPLICATE")
+
+    @override_settings(
+        POWER_AUTOMATE_ENABLED=True,
+        POWER_AUTOMATE_FLOW_URL="https://example.invalid/power-automate",
+        POWER_AUTOMATE_API_KEY="",
+        POWER_AUTOMATE_TIMEOUT_SECONDS=5,
+    )
+    @patch("appearance.power_automate.urlopen")
+    def test_generic_404_does_not_claim_employee_not_found(self, mocked_urlopen):
+        from io import BytesIO
+        from urllib.error import HTTPError
+        from .views import _workforce_feedback
+        mocked_urlopen.side_effect = HTTPError("https://example.invalid", 404, "Not Found", {}, BytesIO(b"Route not found"))
+        delivery = publish_appearance_check(self.check)
+        self.assertIsNone(_workforce_feedback(delivery))
+
+
 class AppearanceCheckLateFieldTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username="late-operator", password="test-password")
