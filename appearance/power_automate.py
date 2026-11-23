@@ -109,7 +109,7 @@ def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAut
         method="POST",
     )
 
-    timeout = max(1, int(getattr(settings, "POWER_AUTOMATE_TIMEOUT_SECONDS", 5)))
+    timeout = max(1, int(getattr(settings, "POWER_AUTOMATE_TIMEOUT_SECONDS", 12)))
 
     try:
         with urlopen(request, timeout=timeout) as response:
