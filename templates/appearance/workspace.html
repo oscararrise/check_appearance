@@ -343,6 +343,16 @@
         </article>
     </section>
 </div>
+<div id="workforce-result-modal" class="workforce-result-overlay hidden" aria-hidden="true">
+    <section class="workforce-result-dialog" role="alertdialog" aria-modal="true" aria-labelledby="workforce-result-title" aria-describedby="workforce-result-description" tabindex="-1">
+        <div id="workforce-result-icon" class="workforce-result-icon" aria-hidden="true">!</div>
+        <p class="workforce-result-kicker">WORKFORCE UPDATE</p>
+        <h2 id="workforce-result-title">Employee not found</h2>
+        <p id="workforce-result-description">The employee was not found in Workforce.</p>
+        <p class="workforce-result-note">The Appearance Check was saved locally, but Workforce was not updated.</p>
+        <button id="workforce-result-close" type="button" class="btn btn-primary workforce-result-close">OK, understood</button>
+    </section>
+</div>
 <div id="unknown-card-modal" class="unknown-card-overlay hidden">
     <section class="unknown-card-dialog" role="dialog" aria-modal="true" aria-labelledby="unknown-card-title" aria-describedby="unknown-card-description">
         <h2 id="unknown-card-title">Unregistered card</h2>
@@ -361,6 +371,17 @@
     </section>
 </div>
 <style>
+.workforce-result-overlay { position:fixed; inset:0; z-index:11000; background:rgba(13,10,27,.76); display:flex; align-items:center; justify-content:center; padding:20px; }
+.workforce-result-overlay.hidden { display:none; }
+.workforce-result-dialog { box-sizing:border-box; width:min(100%,650px); padding:clamp(28px,5vw,52px); border-radius:24px; background:#fff; color:#271738; text-align:center; box-shadow:0 30px 110px rgba(0,0,0,.4); }
+.workforce-result-icon { display:grid; place-items:center; width:86px; height:86px; margin:0 auto 20px; border-radius:50%; font-size:48px; font-weight:800; background:#fce8e8; color:#b42318; }
+.workforce-result-dialog.is-duplicate .workforce-result-icon { background:#fff0d4; color:#985b00; }
+.workforce-result-kicker { font-size:12px; font-weight:800; letter-spacing:.16em; color:#776b89; }
+.workforce-result-dialog h2 { margin:12px 0 16px; font-size:clamp(30px,5vw,43px); line-height:1.12; }
+.workforce-result-dialog > p:not(.workforce-result-kicker) { font-size:17px; line-height:1.55; }
+.workforce-result-note { margin:22px 0; padding:16px; border-radius:12px; background:#f6f3f9; color:#534764; }
+.workforce-result-close { min-height:52px; padding:12px 30px; font-size:16px; }
+@media (max-width:600px) { .workforce-result-dialog { padding:28px 22px; } .workforce-result-dialog h2 { font-size:30px; } }
 .unknown-card-overlay { position:fixed; inset:0; z-index:10000; background:rgba(13,10,27,.65); display:flex; align-items:center; justify-content:center; padding:20px; }
 .unknown-card-overlay.hidden { display:none; }
 .unknown-card-dialog { background:#fff; border-radius:18px; width:min(100%,460px); padding:28px; box-shadow:0 20px 65px rgba(0,0,0,.25); color:#1a1424; }
@@ -373,5 +394,5 @@
 .unknown-card-error { color:#b42318; }
 .unknown-card-error.hidden { display:none; }
 </style>
-<script src="{% static 'js/appearance.js' %}?v=20261105-1"></script>
+<script src="{% static 'js/appearance.js' %}?v=20261123-1"></script>
 {% endblock %}
