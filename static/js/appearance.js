@@ -32,6 +32,41 @@
     let scanBusy = false;
     let mappingBusy = false;
 
+    const workforceModal = document.getElementById('workforce-result-modal');
+    const workforceDialog = workforceModal?.querySelector('.workforce-result-dialog');
+    const workforceTitle = document.getElementById('workforce-result-title');
+    const workforceDescription = document.getElementById('workforce-result-description');
+    const workforceIcon = document.getElementById('workforce-result-icon');
+    const workforceClose = document.getElementById('workforce-result-close');
+    let workforcePreviousFocus = null;
+
+    const closeWorkforceModal = () => {
+        if (!workforceModal) return;
+        workforceModal.classList.add('hidden');
+        workforceModal.setAttribute('aria-hidden', 'true');
+        (workforcePreviousFocus?.isConnected ? workforcePreviousFocus : input)?.focus();
+    };
+    const showWorkforceModal = (code) => {
+        if (!workforceModal || !['NOT_FOUND', 'DUPLICATE'].includes(code)) return false;
+        const duplicate = code === 'DUPLICATE';
+        workforceDialog.classList.toggle('is-duplicate', duplicate);
+        workforceTitle.textContent = duplicate ? 'Duplicate employee ID' : 'Employee not found';
+        workforceDescription.textContent = duplicate
+            ? 'This Employee ID appears more than once in Workforce. Please contact your supervisor.'
+            : 'This Employee ID was not found in Workforce. Please verify the ID with your supervisor.';
+        workforceIcon.textContent = duplicate ? '!' : '×';
+        workforcePreviousFocus = document.activeElement;
+        workforceModal.classList.remove('hidden');
+        workforceModal.setAttribute('aria-hidden', 'false');
+        workforceClose.focus();
+        return true;
+    };
+    workforceClose?.addEventListener('click', closeWorkforceModal);
+    workforceModal?.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') { event.preventDefault(); closeWorkforceModal(); }
+        if (event.key === 'Tab') { event.preventDefault(); workforceClose.focus(); }
+    });
+
     const csrfToken = () => {
         const name = 'csrftoken=';
         const cookie = document.cookie.split(';').map(v => v.trim()).find(v => v.startsWith(name));
@@ -627,10 +662,17 @@
             });
             prependHistory(saved.record, true);
             renderLatestRecord(saved.record);
-            showRecordSavedToast(saved.record);
-            showMessage(`Record saved. ${currentEmployee.full_name} is ${saved.record.status}.`, 'success');
+            const workforceCode = saved.power_automate?.workforce_feedback?.code;
+            if (showWorkforceModal(workforceCode)) {
+                showMessage('Appearance Check saved locally. Workforce was NOT updated.', 'error');
+            } else if (saved.power_automate?.status === 'FAILED' || saved.power_automate?.status === 'ERROR') {
+                showMessage('Appearance Check saved locally, but Workforce delivery failed. Contact support.', 'error');
+            } else {
+                showRecordSavedToast(saved.record);
+                showMessage(`Record saved. ${currentEmployee.full_name} is ${saved.record.status}.`, 'success');
+            }
             resetCheckSelection();
-            input.focus();
+            if (workforceModal?.classList.contains('hidden')) input.focus();
         } catch (error) {
             showMessage(error.message, 'error');
             saveCheck.disabled = false;
