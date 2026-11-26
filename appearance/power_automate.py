@@ -78,6 +78,21 @@ def parse_workforce_result(response_status: int | None, body: str) -> dict | Non
     return {"code": code, "message": str(payload.get("message") or "")[:300]}
 
 
+def parse_workforce_success(response_status: int | None, body: str) -> dict | None:
+    """Recognize explicit ABS confirmation without changing normal success handling."""
+    if response_status != 200 or not body:
+        return None
+    try:
+        payload = json.loads(body)
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(payload, dict) or payload.get("success") is not True:
+        return None
+    if payload.get("code") != "ABS_REGISTERED":
+        return None
+    return {"code": "ABS_REGISTERED", "message": str(payload.get("message") or "Employee successfully registered in ABS.")[:300]}
+
+
 def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAutomateDelivery:
     """Attempt one webhook delivery and persist the result without raising to the UI."""
     now = timezone.now()
@@ -85,6 +100,7 @@ def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAut
     delivery.last_attempt_at = now
     delivery.response_status = None
     delivery.last_error = ""
+    delivery.workforce_success = None
 
     flow_url = getattr(settings, "POWER_AUTOMATE_FLOW_URL", "").strip()
     if not flow_url:
@@ -123,6 +139,7 @@ def attempt_power_automate_delivery(delivery: PowerAutomateDelivery) -> PowerAut
         elif 200 <= response_status < 300:
             delivery.status = PowerAutomateDelivery.Status.SENT
             delivery.sent_at = now
+            delivery.workforce_success = parse_workforce_success(response_status, response_body)
         else:
             delivery.status = PowerAutomateDelivery.Status.FAILED
             delivery.last_error = f"Power Automate returned HTTP {response_status}."

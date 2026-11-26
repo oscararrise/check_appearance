@@ -133,3 +133,13 @@ Restart the Django/Gunicorn process after changing environment variables.
 - Failed deliveries can be selected in Django Admin and retried with **Retry selected Power Automate deliveries**.
 
 This makes Excel/Power Automate downstream of PostgreSQL rather than the operational source of truth.
+
+## 5. ABS registration feedback
+
+When the fallback ABS lookup finds exactly one employee and the Excel update succeeds, return HTTP 200 with Content-Type application/json:
+
+```json
+{"success": true, "code": "ABS_REGISTERED", "message": "Employee successfully registered in ABS."}
+```
+
+Return only one HTTP response per run. Keep NOT_FOUND and DUPLICATE separate from successful updates. The delivery remains SENT and the UI displays ABS registered; the original Appearance status is unchanged. ABS feedback is returned for the immediate request, not persisted as a separate database field. Normal successful responses remain supported.

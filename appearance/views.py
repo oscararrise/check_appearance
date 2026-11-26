@@ -400,7 +400,9 @@ def record_preparation(request):
 
 
 def _workforce_feedback(delivery):
-    """Extract an explicit Workforce business error without confusing it with transport failures."""
+    """Expose explicit Workforce success or business errors, not transport failures."""
+    if delivery.status == PowerAutomateDelivery.Status.SENT:
+        return getattr(delivery, "workforce_success", None)
     if delivery.status != PowerAutomateDelivery.Status.FAILED:
         return None
     raw = delivery.last_error or ""

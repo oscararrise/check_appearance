@@ -52,6 +52,18 @@ class PowerAutomateResponseParsingTests(SimpleTestCase):
         self.assertIsNone(parse_workforce_result(400, '{"error":"Bad Request"}'))
 
 
+    def test_abs_requires_explicit_success_and_http_200(self):
+        from .power_automate import parse_workforce_success
+        body = '{"success": true, "code": "ABS_REGISTERED", "message": "Saved in ABS."}'
+        self.assertEqual(parse_workforce_success(200, body), {
+            "code": "ABS_REGISTERED", "message": "Saved in ABS.",
+        })
+        self.assertIsNone(parse_workforce_success(404, body))
+        self.assertIsNone(parse_workforce_success(200, '{"success": false, "code": "ABS_REGISTERED"}'))
+        self.assertIsNone(parse_workforce_success(200, '{"success": true}'))
+        self.assertIsNone(parse_workforce_success(200, 'not JSON'))
+
+
 class PowerAutomateIntegrationTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
@@ -186,6 +198,29 @@ class PowerAutomateIntegrationTests(TestCase):
         mocked_urlopen.side_effect = HTTPError("https://example.invalid", 404, "Not Found", {}, BytesIO(b"Route not found"))
         delivery = publish_appearance_check(self.check)
         self.assertIsNone(_workforce_feedback(delivery))
+
+
+    @override_settings(
+        POWER_AUTOMATE_ENABLED=True,
+        POWER_AUTOMATE_FLOW_URL="https://example.invalid/power-automate",
+        POWER_AUTOMATE_API_KEY="",
+        POWER_AUTOMATE_TIMEOUT_SECONDS=5,
+    )
+    @patch("appearance.power_automate.urlopen")
+    def test_abs_registration_is_sent_and_exposed_to_ui(self, mocked_urlopen):
+        from .views import _workforce_feedback
+        response = MagicMock()
+        response.getcode.return_value = 200
+        response.read.return_value = b'{"success": true, "code": "ABS_REGISTERED", "message": "Saved in ABS."}'
+        mocked_urlopen.return_value.__enter__.return_value = response
+        delivery = publish_appearance_check(self.check)
+        self.assertEqual(delivery.status, PowerAutomateDelivery.Status.SENT)
+        self.assertEqual(delivery.last_error, "")
+        self.assertEqual(_workforce_feedback(delivery), {
+            "code": "ABS_REGISTERED", "message": "Saved in ABS.",
+        })
+        self.check.refresh_from_db()
+        self.assertEqual(self.check.status, AppearanceCheck.Status.NOT_READY)
 
 
 class AppearanceCheckLateFieldTests(TestCase):

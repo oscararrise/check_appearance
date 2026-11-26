@@ -202,7 +202,7 @@
         `;
     };
 
-    const showRecordSavedToast = (record) => {
+    const showRecordSavedToast = (record, registeredInAbs = false) => {
         let toast = document.getElementById('record-saved-toast');
         if (!toast) {
             toast = document.createElement('div');
@@ -215,7 +215,7 @@
 
         toast.innerHTML = `
             <span class="record-saved-icon" aria-hidden="true">✓</span>
-            <div><strong>Record saved</strong><small>${escapeHtml(record.employee_name || record.employee_id || 'Employee')} · ${escapeHtml(record.status || 'Registered')}</small></div>
+            <div><strong>${registeredInAbs ? 'ABS registered' : 'Record saved'}</strong><small>${escapeHtml(record.employee_name || record.employee_id || 'Employee')} · ${escapeHtml(registeredInAbs ? 'Saved in ABS' : (record.status || 'Registered'))}</small></div>
         `;
         toast.classList.add('visible');
         window.clearTimeout(saveToastTimer);
@@ -667,6 +667,9 @@
                 showMessage('Appearance Check saved locally. Workforce was NOT updated.', 'error');
             } else if (saved.power_automate?.status === 'FAILED' || saved.power_automate?.status === 'ERROR') {
                 showMessage('Appearance Check saved locally, but Workforce delivery failed. Contact support.', 'error');
+            } else if (saved.power_automate?.status === 'SENT' && workforceCode === 'ABS_REGISTERED') {
+                showRecordSavedToast(saved.record, true);
+                showMessage(`ABS registered. ${currentEmployee.full_name} was successfully saved in ABS.`, 'success');
             } else {
                 showRecordSavedToast(saved.record);
                 showMessage(`Record saved. ${currentEmployee.full_name} is ${saved.record.status}.`, 'success');
